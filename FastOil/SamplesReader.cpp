@@ -29,10 +29,12 @@ vector<string> _splitBySpaces( string line )
 
 void SamplesReader::ReadSamples( string filename, TSamples& pos, TSamples& neg, unsigned* alphabetLength )
 {
+	assert(alphabetLength != NULL);
+
 	ifstream file(filename);
 	if(!file.is_open()) 
 	{
-		throw exception("El archivo no pudo ser abierto");
+		throw exception("El archivo de muestras no pudo ser abierto");
 	}
 
 	string line;

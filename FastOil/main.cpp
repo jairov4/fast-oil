@@ -35,19 +35,36 @@ void TrainSingle(string samplesFilename, string modelFilename, bool showProgress
 // Entrena un conjunto de modelos
 void TrainMultiple(string samplesFilename, string modelsManifestFilename, int count, bool showProgress, bool showMerges, bool skipSearch, bool noRandom, int customSeed)
 {
+	ofstream manifest(modelsManifestFilename);
+	if(!manifest.is_open())
+	{
+		throw exception("No fue posible abrir el archivo de manifiesto");
+	}
 	string modelFilename;
 	for(int i=0; i<count; i++)
 	{
 		modelFilename = string("automata-") + lexical_cast<string>(i) + ".auto";
 		TrainSingle(samplesFilename, modelFilename, showProgress, showMerges, skipSearch, noRandom, customSeed);
+		manifest << modelFilename << endl;
 	}
+	manifest.close();
 }
 
-void TestSingle(string modelFilename, string samplesFilename)
+// Evalua un modelo en un conjunto de muestras
+void TestSingle(string samplesFilename, string modelFilename, string reportFilename)
 {
+	SamplesReader reader;
+	SamplesReader::TSamples pos, neg;
+	unsigned alpha;
+	reader.ReadSamples(samplesFilename, pos, neg, &alpha);
 
+	auto model = NdfaDotExporter::ImportDestinoPlainText(modelFilename);
+	for_each(pos.begin(), pos.end(), [&model](SamplesReader::TSample x) { model.IsMatch(x); });
+	for_each(neg.begin(), neg.end(), [&model](SamplesReader::TSample x) { model.IsMatch(x); });
 }
 
+
+// Evalua un conjunto de modelos sobre un conjunto de muestras
 void TestMultiple(string modelsManifestFilename, string samplesFilename, string reportFilename)
 {
 
@@ -56,11 +73,18 @@ void TestMultiple(string modelsManifestFilename, string samplesFilename, string 
 // Procesa los argumentos para obtener la configuracion
 void ParseTrainOptions(vector<string>::const_iterator optBegin, vector<string>::const_iterator optEnd, bool* showProgress, bool* showMerges, bool* skipSearch, bool* noRandom, int* customSeed)
 {
+	assert(showProgress != NULL);
+	assert(showMerges != NULL);
+	assert(skipSearch != NULL);
+	assert(noRandom != NULL);
+	assert(customSeed != NULL);
+
 	*showProgress = true;
 	*showMerges = false;
 	*skipSearch = false;
 	*noRandom = false;
 	*customSeed = -1;
+
 	for_each(optBegin, optEnd, [skipSearch, noRandom, showMerges, customSeed](string opt) 
 	{
 		if(opt == "--skip-search")
@@ -159,7 +183,10 @@ int main(int argc, char* argv[])
 		bool showProgress, showMerges, skipSearch, noRandom;
 		int customSeed;
 		ParseTrainOptions(arguments.begin()+4, arguments.end(), &showProgress, &showMerges, &skipSearch, &noRandom, &customSeed);
-		if(trainSingle) TrainSingle(samplesFilename, modelFilename, showProgress, showMerges, skipSearch, noRandom, customSeed);
+		if(trainSingle) 
+		{
+			TrainSingle(samplesFilename, modelFilename, showProgress, showMerges, skipSearch, noRandom, customSeed);
+		}
 		if (trainMultiple) 
 		{
 			int count = lexical_cast<int>(arguments[4]);
