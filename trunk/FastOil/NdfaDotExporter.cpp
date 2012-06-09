@@ -69,18 +69,16 @@ void NdfaDotExporter::Export(const Ndfa& ndfa, std::string filename)
 }
 
 
+vector<string> _splitBySpaces( string line );
+
+
 void NdfaDotExporter::ExportDestinoPlainText(const Ndfa& ndfa, std::string filename)
 {
 	ofstream out(filename);	
 
-	out << "# Alfabeto" << endl;
-	out << "{";	
-	for(unsigned i=0; i<ndfa.GetAlphabetLenght(); i++)
-	{
-		out << i << (i==ndfa.GetAlphabetLenght()-1? "" : ",");
-	}
-	out << "}" << endl << endl;
-
+	out << "# Alfabeto" << endl;	
+	out << ndfa.GetAlphabetLenght() << endl;
+	
 	out << "# Numero de estados" << endl;
 	int states = 0;
 	for(auto it=ndfa.GetActiveStates().GetBitSetIterator(); !it.IsEnd(); it.Next())
@@ -129,4 +127,62 @@ void NdfaDotExporter::ExportDestinoPlainText(const Ndfa& ndfa, std::string filen
 	out << transitions << endl;
 	out << buffer.str();
 	out.close();
+}
+
+Ndfa NdfaDotExporter::ImportDestinoPlainText(std::string filename)
+{
+	ifstream file(filename);
+	if(!file.is_open())
+	{
+		throw std::exception("No fue posible abrir el modelo");
+	}
+	
+	string line;
+	Ndfa ndfa(1);
+	enum { header_alphabet, header_states, header_initial, header_final, header_transitions_count, body_transitions } state;
+	state = header_alphabet;
+
+	while(!file.eof())
+	{
+		// Leemos la informacion de cabecera
+		getline(file, line);
+		trim(line);
+		if(line[0] == '#') continue;
+
+		if(state == header_alphabet)
+		{
+			vector<string> splits;
+			int alpha = lexical_cast<int>(line);
+			ndfa = Ndfa(alpha);
+			state = header_states;
+		} 
+		else if(state == header_states)
+		{
+			// omitimos esto
+			state = header_initial;
+		}
+		else if(state == header_initial)
+		{
+			auto splits = _splitBySpaces(line);
+			for_each(splits.begin(), splits.end(), [&ndfa](string item){ ndfa.SetInitial(lexical_cast<int>(item)); });
+			state = header_final;
+		}
+		else if(state == header_final)
+		{
+			auto splits = _splitBySpaces(line);
+			for_each(splits.begin(), splits.end(), [&ndfa](string item){ ndfa.SetFinal(lexical_cast<int>(item)); });
+			state = header_transitions_count;
+		}
+		else if(state == header_transitions_count)
+		{
+			// omitimos esto
+			state = body_transitions;
+		}
+		else if(state == body_transitions)
+		{
+			auto splits = _splitBySpaces(line);
+			ndfa.SetTransition(lexical_cast<int>(splits[0]), lexical_cast<int>(splits[1]), lexical_cast<int>(splits[2]));
+		}
+	}
+	file.close();
 }
