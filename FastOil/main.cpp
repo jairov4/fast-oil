@@ -40,6 +40,8 @@ void TrainMultiple(string samplesFilename, string modelsManifestFilename, int co
 	{
 		throw exception("No fue posible abrir el archivo de manifiesto");
 	}
+	manifest << "# Manifiesto de clasificador" << endl;
+	manifest << "# Los siguientes archivos de modelos referenciados" << endl;
 	string modelFilename;
 	for(int i=0; i<count; i++)
 	{
@@ -50,24 +52,156 @@ void TrainMultiple(string samplesFilename, string modelsManifestFilename, int co
 	manifest.close();
 }
 
+// Prueba una muestra con el clasificador NDFA
+int TestSample(ofstream& report, int n, const Ndfa& model, const SamplesReader::TSample& sample)
+{
+	auto c = model.IsMatch(sample);		
+	report << "Evaluation # " << n << " class: " << c << endl;
+	return c == true ? 1 : 0;
+}
+
 // Evalua un modelo en un conjunto de muestras
 void TestSingle(string samplesFilename, string modelFilename, string reportFilename)
-{
-	SamplesReader reader;
+{	
 	SamplesReader::TSamples pos, neg;
+	cout << "Cargando modelo." << endl;
+	auto model = NdfaDotExporter::ImportDestinoPlainText(modelFilename);
+
+	cout << "Cargando archivo de muestras." << endl;
+	SamplesReader reader;
+	
 	unsigned alpha;
 	reader.ReadSamples(samplesFilename, pos, neg, &alpha);
 
-	auto model = NdfaDotExporter::ImportDestinoPlainText(modelFilename);
-	for_each(pos.begin(), pos.end(), [&model](SamplesReader::TSample x) { model.IsMatch(x); });
-	for_each(neg.begin(), neg.end(), [&model](SamplesReader::TSample x) { model.IsMatch(x); });
+	cout << "Evaluando..." << endl;
+	int pc = 0;
+	int nc = 0;
+	ofstream report(reportFilename);
+	if(!report.is_open())
+	{
+		throw std::exception("Error with report file");
+		return;
+	}
+
+	report << "Muestras Positivas" << endl;
+	for(size_t i = 0; i < pos.size(); i++)
+	{
+		auto r = TestSample(report, i, model, pos[i]);		
+		if(r == 1) pc++;
+	}
+	report << "Muestras Negativas" << endl;
+	for(size_t i=0; i<neg.size(); i++)
+	{
+		auto r = TestSample(report, i, model, neg[i]);		
+		if(r == 0) nc++;
+	}
+
+	// informa resultado por stdout
+	cout << "TP: " << pc << "/" << pos.size() << " TN: " << nc << "/" << neg.size() << endl;
+	cout << "Total: " << (pos.size() + neg.size()) << " Total P: " << pos.size() << " Total N: " << neg.size() << endl;
+
+	// informa resultado en el reporte
+	report << "TP: " << pc << "/" << pos.size() << " TN: " << nc << "/" << neg.size() << endl;
+	report << "Total: " << (pos.size() + neg.size()) << " Total P: " << pos.size() << " Total N: " << neg.size() << endl;
+
+	report.close();
 }
 
+// Lee los modelos indicados en el manifiesto
+void ReadManifest(string manifestFilename, vector<string>& models)
+{
+	ifstream manifest(manifestFilename);
+	if(!manifest.is_open())
+	{
+		throw std::exception("Error with manifest file");
+		return;
+	}
+	string line;
+	while(!manifest.eof())
+	{
+		getline(manifest, line);
+		boost::trim(line);
+		if(line[0] == '#') continue;
+		models.push_back(line);
+	}
+	manifest.close();
+}
 
 // Evalua un conjunto de modelos sobre un conjunto de muestras
 void TestMultiple(string modelsManifestFilename, string samplesFilename, string reportFilename)
 {
+	SamplesReader::TSamples pos, neg;
+	vector<Ndfa> models;
+		
+	// Carga modelos del clasificador
+	{
+		cout << "Cargando manifiesto." << endl;
+		vector<string> modelFiles;
+		ReadManifest(modelsManifestFilename, modelFiles);
+		for(auto i = modelFiles.begin(); i!=modelFiles.end(); i++)
+		{
+			auto model = NdfaDotExporter::ImportDestinoPlainText(*i);
+			models.push_back(model);
+			cout << "Modelo \"" << *i << "\" cargado." << endl;
+		}
+		cout << "Cargados " << models.size() << " modelos" << endl;
+	}	
+	
+	cout << "Cargando archivo de muestras." << endl;
+	SamplesReader reader;
+	
+	unsigned alpha;
+	reader.ReadSamples(samplesFilename, pos, neg, &alpha);
 
+	cout << "Evaluando..." << endl;
+	int pc = 0;
+	int nc = 0;
+	ofstream report(reportFilename);
+	if(!report.is_open())
+	{
+		throw std::exception("Error with report file");
+		return;
+	}
+
+	// el umbral se fija en la mitad entera del numero de modelos	
+	auto threshold = models.size() / 2;
+
+	report << "Muestras Positivas" << endl;
+	for(size_t i = 0; i < pos.size(); i++)
+	{
+		int answerCounter;
+		for(auto j=models.begin(); j != models.end(); j++)
+		{
+			auto rj = TestSample(report, i, *j, pos[i]);
+			// cuenta los modelos que votan por "positiva"
+			if(rj == 1) answerCounter++; 
+		}		
+		// si mas de la mitad de los votos son por "positiva"
+		if(answerCounter > threshold) pc++; 
+	}
+	report << "Muestras Negativas" << endl;
+	for(size_t i=0; i<neg.size(); i++)
+	{
+		int answerCounter;
+		for(auto j=models.begin(); j != models.end(); j++)
+		{
+			auto r = TestSample(report, i, *j, neg[i]);		
+			// cuenta los modelos que votan por "negativa"
+			if(r == 0) answerCounter++;
+		}
+		// si mas de la mitad de los votos son por "negativa"
+		if(answerCounter > threshold) nc++;
+	}
+
+	// informa resultado por stdout
+	cout << "TP: " << pc << "/" << pos.size() << " TN: " << nc << "/" << neg.size() << endl;
+	cout << "Total: " << (pos.size() + neg.size()) << " Total P: " << pos.size() << " Total N: " << neg.size() << endl;
+
+	// informa resultado en el reporte
+	report << "TP: " << pc << "/" << pos.size() << " TN: " << nc << "/" << neg.size() << endl;
+	report << "Total: " << (pos.size() + neg.size()) << " Total P: " << pos.size() << " Total N: " << neg.size() << endl;
+
+	report.close();
 }
 
 // Procesa los argumentos para obtener la configuracion
@@ -101,7 +235,7 @@ void ParseTrainOptions(vector<string>::const_iterator optBegin, vector<string>::
 		}
 		else if(boost::starts_with(opt, "--seed="))
 		{
-			*customSeed = lexical_cast<int,string>(opt.substr(7));
+			*customSeed = lexical_cast<int>(opt.substr(7));
 		}
 	});
 }
@@ -203,8 +337,8 @@ int main(int argc, char* argv[])
 		string samplesFilename = arguments[2];
 		string modelFilename = arguments[3];
 		string reportFilename = arguments[4];
-		//if(testSingle) TestSingle(samplesFilename, modelFilename, reportFilename);
-		//if(testMultiple) TestMultiple(samplesFilename, modelFilename, reportFilename);
+		if(testSingle) TestSingle(samplesFilename, modelFilename, reportFilename);
+		if(testMultiple) TestMultiple(samplesFilename, modelFilename, reportFilename);
 	} 
 	else 
 	{
