@@ -72,17 +72,17 @@ void TestSingle(string samplesFilename, string modelFilename, string reportFilen
 	
 	unsigned alpha;
 	reader.ReadSamples(samplesFilename, pos, neg, &alpha);
-
-	cout << "Evaluando..." << endl;
-	int pc = 0;
-	int nc = 0;
+		
 	ofstream report(reportFilename);
 	if(!report.is_open())
 	{
-		throw std::exception("Error with report file");
+		throw std::exception("Error abriendo el archivo de reporte");
 		return;
 	}
 
+	cout << "Evaluando..." << endl;
+
+	int pc = 0, nc = 0;
 	report << "Muestras Positivas" << endl;
 	for(size_t i = 0; i < pos.size(); i++)
 	{
@@ -153,19 +153,18 @@ void TestMultiple(string modelsManifestFilename, string samplesFilename, string 
 	unsigned alpha;
 	reader.ReadSamples(samplesFilename, pos, neg, &alpha);
 
-	cout << "Evaluando..." << endl;
-	int pc = 0;
-	int nc = 0;
 	ofstream report(reportFilename);
 	if(!report.is_open())
 	{
-		throw std::exception("Error with report file");
+		throw std::exception("Error abriendo el archivo de reporte");
 		return;
 	}
-
+	
+	cout << "Evaluando..." << endl;
+	
 	// el umbral se fija en la mitad entera del numero de modelos	
 	auto threshold = models.size() / 2;
-
+	int pc = 0, nc = 0;
 	report << "Muestras Positivas" << endl;
 	for(size_t i = 0; i < pos.size(); i++)
 	{
