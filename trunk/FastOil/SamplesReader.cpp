@@ -82,6 +82,10 @@ void SamplesReader::ReadSamples( string filename, TSamples& pos, TSamples& neg, 
 			for (auto it = splits.cbegin()+2; it!=splits.cend(); ++it)
 			{
 				auto val = lexical_cast<TSymbol>(*it);
+				if(val >= *alphabetLength)
+				{
+					throw exception("Formato de archivo de secuencias invalido, longitud de alfabeto incorrecta");
+				}
 				newSample.push_back(val);
 			}
 
