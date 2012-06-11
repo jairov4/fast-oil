@@ -15,11 +15,13 @@ void TrainSingle(string samplesFilename, string modelFilename, bool showProgress
 	auto t = customSeed == -1 ? time(NULL) : customSeed;	
 	srand((unsigned)t);
 
+	cout << "Cargando muestras" << endl;
 	SamplesReader reader;
 	SamplesReader::TSamples pos, neg;
 	unsigned alpha;
 	reader.ReadSamples(samplesFilename, pos, neg, &alpha);
 
+	cout << "Entrenando modelo" << endl;
 	OilTrainer trainer;
 	trainer.ShowProgress = showProgress;
 	trainer.ShowMerges = showMerges;
@@ -27,6 +29,8 @@ void TrainSingle(string samplesFilename, string modelFilename, bool showProgress
 	trainer.DoNotUseRandomSort = noRandom;
 	trainer.ShowPossibleMerges = showMerges;
 	auto ndfa = trainer.Train(pos, neg, alpha);
+
+	cout << "Exportando modelo" << endl;
 	NdfaDotExporter::Export(*ndfa, modelFilename+".dot");
 	NdfaDotExporter::ExportDestinoPlainText(*ndfa, modelFilename);
 	delete ndfa;
@@ -168,7 +172,7 @@ void TestMultiple(string modelsManifestFilename, string samplesFilename, string 
 	report << "Muestras Positivas" << endl;
 	for(size_t i = 0; i < pos.size(); i++)
 	{
-		int answerCounter;
+		int answerCounter = 0;
 		for(auto j=models.begin(); j != models.end(); j++)
 		{
 			auto rj = TestSample(report, i, *j, pos[i]);
@@ -181,7 +185,7 @@ void TestMultiple(string modelsManifestFilename, string samplesFilename, string 
 	report << "Muestras Negativas" << endl;
 	for(size_t i=0; i<neg.size(); i++)
 	{
-		int answerCounter;
+		int answerCounter = 0;
 		for(auto j=models.begin(); j != models.end(); j++)
 		{
 			auto r = TestSample(report, i, *j, neg[i]);		
@@ -223,18 +227,22 @@ void ParseTrainOptions(vector<string>::const_iterator optBegin, vector<string>::
 		if(opt == "--skip-search")
 		{
 			*skipSearch = true;		
+			cout << "Omitir la busqueda" << endl;
 		}
 		else if(opt == "--no-random")
 		{
 			*noRandom = true;
+			cout << "No realizar mezcla en orden aleatorio" << endl;
 		} 
 		else if(opt == "-v")
 		{
 			*showMerges = true;
+			cout << "Mostrar mezclas" << endl;
 		}
 		else if(boost::starts_with(opt, "--seed="))
 		{
 			*customSeed = lexical_cast<int>(opt.substr(7));
+			cout << "Semilla personalizada: " << (*customSeed) << endl;
 		}
 	});
 }
@@ -320,12 +328,12 @@ int main(int argc, char* argv[])
 			ParseTrainOptions(arguments.begin()+3, arguments.end(), &showProgress, &showMerges, &skipSearch, &noRandom, &customSeed);
 			if(trainSingle) 
 			{
-				cout << "Entrenando modelo" << endl ;
+				cout << "Entrenar modelo" << endl ;
 				TrainSingle(samplesFilename, modelFilename, showProgress, showMerges, skipSearch, noRandom, customSeed);
 			}
 			if (trainMultiple) 
 			{
-				cout << "Entrenando multiples modelos" << endl;
+				cout << "Entrenar multiples modelos" << endl;
 				int count = lexical_cast<int>(arguments[3]);
 				TrainMultiple(samplesFilename, modelFilename, count, showProgress, showMerges, skipSearch, noRandom, customSeed);
 			}

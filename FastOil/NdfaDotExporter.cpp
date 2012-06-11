@@ -147,7 +147,9 @@ Ndfa NdfaDotExporter::ImportDestinoPlainText(std::string filename)
 		// Leemos la informacion de cabecera
 		getline(file, line);
 		trim(line);
-		if(line[0] == '#') continue;
+
+		// Omitimos lineas vacias o con comentarios
+		if(line.size() == 0 || line[0] == '#') continue;
 
 		if(state == header_alphabet)
 		{
@@ -185,4 +187,5 @@ Ndfa NdfaDotExporter::ImportDestinoPlainText(std::string filename)
 		}
 	}
 	file.close();
+	return ndfa;
 }
