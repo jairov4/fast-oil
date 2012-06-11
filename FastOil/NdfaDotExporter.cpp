@@ -149,8 +149,12 @@ Ndfa NdfaDotExporter::ImportDestinoPlainText(std::string filename)
 		throw std::exception("No fue posible abrir el modelo");
 	}
 	int stateCount;
+	int transitionCount;
+	int currentTransition;
 	string line;
 	Ndfa ndfa(1);
+
+	// maquina de estados de lectura de archivo
 	enum { header_alphabet, header_states, header_initial, header_final, header_transitions_count, body_transitions } state;
 	state = header_alphabet;
 
@@ -189,7 +193,8 @@ Ndfa NdfaDotExporter::ImportDestinoPlainText(std::string filename)
 		}
 		else if(state == header_transitions_count)
 		{
-			// omitimos esto
+			transitionCount = lexical_cast<int>(line);
+			currentTransition = 0;
 			state = body_transitions;
 		}
 		else if(state == body_transitions)
@@ -210,7 +215,12 @@ Ndfa NdfaDotExporter::ImportDestinoPlainText(std::string filename)
 			{
 				throw exception("Codigo de simbolo invalido");
 			}
+			if(currentTransition >= transitionCount)
+			{
+				throw exception("Cantidad de transiciones incorrecta");
+			}
 			ndfa.SetTransition(src, dst, sym);
+			currentTransition++;			
 		}
 	}
 	file.close();
