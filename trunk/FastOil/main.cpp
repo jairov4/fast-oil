@@ -57,7 +57,7 @@ void TrainMultiple(string samplesFilename, string modelsManifestFilename, int co
 }
 
 // Prueba una muestra con el clasificador NDFA
-int TestSample(ofstream& report, int n, const Ndfa& model, const SamplesReader::TSample& sample)
+int TestSample(ofstream& report, size_t n, const Ndfa& model, const SamplesReader::TSample& sample)
 {
 	auto c = model.IsMatch(sample);		
 	report << "Evaluation # " << n << " class: " << c << endl;
@@ -125,14 +125,14 @@ void ReadManifest(string manifestFilename, vector<string>& models)
 	{
 		getline(manifest, line);
 		boost::trim(line);
-		if(line[0] == '#') continue;
+		if(line.size() == 0 || line[0] == '#') continue;
 		models.push_back(line);
 	}
 	manifest.close();
 }
 
 // Evalua un conjunto de modelos sobre un conjunto de muestras
-void TestMultiple(string modelsManifestFilename, string samplesFilename, string reportFilename)
+void TestMultiple(string samplesFilename, string modelsManifestFilename, string reportFilename)
 {
 	SamplesReader::TSamples pos, neg;
 	vector<Ndfa> models;
@@ -143,7 +143,7 @@ void TestMultiple(string modelsManifestFilename, string samplesFilename, string 
 		vector<string> modelFiles;
 		ReadManifest(modelsManifestFilename, modelFiles);
 		for(auto i = modelFiles.begin(); i!=modelFiles.end(); i++)
-		{
+		{			
 			auto model = NdfaDotExporter::ImportDestinoPlainText(*i);
 			models.push_back(model);
 			cout << "Modelo \"" << *i << "\" cargado." << endl;
