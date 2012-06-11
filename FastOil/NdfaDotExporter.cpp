@@ -89,37 +89,49 @@ void NdfaDotExporter::ExportDestinoPlainText(const Ndfa& ndfa, std::string filen
 	out << states << endl;
 
 	out << "# Estados iniciales" << endl;
-	for(auto it=ndfa.GetInitial().GetBitSetIterator(); !it.IsEnd(); it.Next())
+	states = 0;
+	for(auto it=ndfa.GetActiveStates().GetBitSetIterator(); !it.IsEnd(); it.Next())
 	{
-		out << it.GetBit() << " ";
-	}
+		auto bitN = it.GetBit(); // de los activos cuales son iniciales?
+		if(ndfa.GetInitial().Test(bitN)) 
+		{
+			out << states << " ";
+		}
+		states++;
+	}	
 	out << endl;
 
 	out << "# Estados finales" << endl;
-	for(auto it=ndfa.GetFinal().GetBitSetIterator(); !it.IsEnd(); it.Next())
+	states = 0;
+	for(auto it=ndfa.GetActiveStates().GetBitSetIterator(); !it.IsEnd(); it.Next())
 	{
-		out << it.GetBit() << " ";
-	}
+		auto bitN = it.GetBit(); // de los activos cuales son finales?
+		if(ndfa.GetFinal().Test(bitN)) 
+		{
+			out << states << " ";
+		}
+		states++;
+	}	
 	out << endl;
 
-	out << "# Descripcion de las transiciones" << endl;	
+	out << "# Descripcion de las transiciones" << endl;
 	ostringstream buffer;
 	int transitions = 0;
 	int st1=0;
 	for (auto it1=ndfa.GetActiveStates().GetBitSetIterator(); !it1.IsEnd(); it1.Next())
-	{
-		unsigned i = it1.GetBit();		
+	{ 
+		unsigned i = it1.GetBit();
 		int st2=0;
 		for (auto it2=ndfa.GetActiveStates().GetBitSetIterator(); !it2.IsEnd(); it2.Next())
 		{
-			unsigned k = it2.GetBit();			
+			unsigned k = it2.GetBit();
 			for (unsigned j = 0; j < ndfa.GetAlphabetLenght(); j++)
 			{
 				// estado(st1) con estado(st2) con simbolo(j)
 				if (!ndfa.GetSuccesors(i, j).Test(k)) continue;
-				buffer << st1 << " " << st2 << " " << j << endl;				
+				buffer << st1 << " " << st2 << " " << j << endl;
 				transitions++;
-			}			
+			}
 			st2++;
 		}
 		st1++;
@@ -183,7 +195,10 @@ Ndfa NdfaDotExporter::ImportDestinoPlainText(std::string filename)
 		else if(state == body_transitions)
 		{
 			auto splits = _splitBySpaces(line);
-			ndfa.SetTransition(lexical_cast<int>(splits[0]), lexical_cast<int>(splits[1]), lexical_cast<int>(splits[2]));
+			int src = lexical_cast<int>(splits[0]);
+			int dst = lexical_cast<int>(splits[1]);
+			int sym = lexical_cast<int>(splits[2]);
+			ndfa.SetTransition(src, dst, sym);
 		}
 	}
 	file.close();
