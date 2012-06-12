@@ -64,6 +64,19 @@ int TestSample(ofstream& report, size_t n, const Ndfa& model, const SamplesReade
 	return c == true ? 1 : 0;
 }
 
+// Escribe los resultados de un experimento
+void ReportMetric(ostream& report, int tp, int tn, int totalP, int totalN)
+{
+	float acc = (tp + tn)/(float)(totalP + totalN);
+	float sens = tp/(float)totalP;
+	float spec = tn/(float)totalN;
+
+	// informa resultado
+	report << "True Positives: " << tp << ", True Negatives: " << tn << endl;	
+	report << "Total Samples: " << (totalP + totalN) << " Total P-samples: " << totalP << " Total N-samples: " << totalN << endl;
+	report << "Accuracy: " << acc << ", Sensitivity: " << sens << ", Specificity: " << spec << endl;
+}
+
 // Evalua un modelo en un conjunto de muestras
 void TestSingle(string samplesFilename, string modelFilename, string reportFilename)
 {	
@@ -100,13 +113,8 @@ void TestSingle(string samplesFilename, string modelFilename, string reportFilen
 		if(r == 0) nc++;
 	}
 
-	// informa resultado por stdout
-	cout << "TP: " << pc << "/" << pos.size() << " TN: " << nc << "/" << neg.size() << endl;
-	cout << "Total: " << (pos.size() + neg.size()) << " Total P: " << pos.size() << " Total N: " << neg.size() << endl;
-
-	// informa resultado en el reporte
-	report << "TP: " << pc << "/" << pos.size() << " TN: " << nc << "/" << neg.size() << endl;
-	report << "Total: " << (pos.size() + neg.size()) << " Total P: " << pos.size() << " Total N: " << neg.size() << endl;
+	ReportMetric(cout, pc, nc, (int)pos.size(), (int)neg.size());
+	ReportMetric(report, pc, nc, (int)pos.size(), (int)neg.size());
 
 	report.close();
 }
@@ -130,6 +138,7 @@ void ReadManifest(string manifestFilename, vector<string>& models)
 	}
 	manifest.close();
 }
+
 
 // Evalua un conjunto de modelos sobre un conjunto de muestras
 void TestMultiple(string samplesFilename, string modelsManifestFilename, string reportFilename)
@@ -196,13 +205,9 @@ void TestMultiple(string samplesFilename, string modelsManifestFilename, string 
 		if(answerCounter > threshold) nc++;
 	}
 
-	// informa resultado por stdout
-	cout << "TP: " << pc << "/" << pos.size() << " TN: " << nc << "/" << neg.size() << endl;
-	cout << "Total: " << (pos.size() + neg.size()) << " Total P: " << pos.size() << " Total N: " << neg.size() << endl;
-
-	// informa resultado en el reporte
-	report << "TP: " << pc << "/" << pos.size() << " TN: " << nc << "/" << neg.size() << endl;
-	report << "Total: " << (pos.size() + neg.size()) << " Total P: " << pos.size() << " Total N: " << neg.size() << endl;
+	// informa resultado
+	ReportMetric(cout, pc, nc, (int)pos.size(), (int)neg.size());
+	ReportMetric(report, pc, nc, (int)pos.size(), (int)neg.size());
 
 	report.close();
 }

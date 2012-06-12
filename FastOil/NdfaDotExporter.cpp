@@ -200,9 +200,9 @@ Ndfa NdfaDotExporter::ImportDestinoPlainText(std::string filename)
 		else if(state == body_transitions)
 		{
 			auto splits = _splitBySpaces(line);
-			int src = lexical_cast<int>(splits[0]);
-			int dst = lexical_cast<int>(splits[1]);						
-			int sym = lexical_cast<int>(splits[2]);			
+			auto src = lexical_cast<int>(splits[0]);
+			auto dst = lexical_cast<int>(splits[1]);						
+			auto sym = lexical_cast<unsigned>(splits[2]);			
 			if(src >= stateCount) 
 			{
 				throw exception("Numero de estado fuente invalido");
