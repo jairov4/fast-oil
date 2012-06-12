@@ -67,14 +67,17 @@ int TestSample(ofstream& report, size_t n, const Ndfa& model, const SamplesReade
 // Escribe los resultados de un experimento
 void ReportMetric(ostream& report, int tp, int tn, int totalP, int totalN)
 {
-	float acc = (tp + tn)/(float)(totalP + totalN);
-	float sens = tp/(float)totalP;
-	float spec = tn/(float)totalN;
+	auto fp = totalP - tp;
+	auto fn = totalN - tn;
+	auto acc = (tp + tn)/(float)(totalP + totalN);
+	auto sens = tp/(float)totalP;
+	auto spec = tn/(float)totalN;
+	auto mcc = (tp*tn - fp*fn)/sqrt((float)(tp+fp)*(tp+fn)*(tn+fp)*(tn+fn));
 
 	// informa resultado
 	report << "True Positives: " << tp << ", True Negatives: " << tn << endl;	
-	report << "Total Samples: " << (totalP + totalN) << " Total P-samples: " << totalP << " Total N-samples: " << totalN << endl;
-	report << "Accuracy: " << acc << ", Sensitivity: " << sens << ", Specificity: " << spec << endl;
+	report << "Total Samples: " << (totalP + totalN) << ", Total P-samples: " << totalP << ", Total N-samples: " << totalN << endl;
+	report << "Accuracy: " << acc << ", Sensitivity: " << sens << ", Specificity: " << spec << ", MCC: " << mcc << endl;
 }
 
 // Evalua un modelo en un conjunto de muestras
