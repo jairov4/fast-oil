@@ -154,12 +154,12 @@ namespace Testing {
 	{	
 		list<function<void()>> s;
 
-		/*s.push_back(Test1);
+		s.push_back(Test1);
 		s.push_back(Test2);
 		s.push_back(Test3);
 		s.push_back(Test4);
 		s.push_back(Test5);
-		s.push_back(Test6);*/
+		s.push_back(Test6);
 		s.push_back(Test7);
 		
 		int i=0;
