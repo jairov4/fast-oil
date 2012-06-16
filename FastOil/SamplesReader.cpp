@@ -1,3 +1,7 @@
+/**
+	Very simple File Format for sample dataset exchange
+*/
+
 #include "StdAfx.h"
 #include "SamplesReader.h"
 
@@ -26,7 +30,9 @@ vector<string> _splitBySpaces( string line )
 	return splits;
 }
 
-
+/// <summary>
+/// Lee dos conjuntos de muestras a partir de un archivo de texto
+/// </summary>
 void SamplesReader::ReadSamples( string filename, TSamples& pos, TSamples& neg, unsigned* alphabetLength )
 {
 	assert(alphabetLength != NULL);
