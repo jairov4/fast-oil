@@ -10,11 +10,8 @@ using boost::starts_with;
 using boost::lexical_cast;
 
 // Entrena un solo modelo
-void TrainSingle(string samplesFilename, string modelFilename, bool showProgress, bool showMerges, bool skipSearch, bool noRandom, int customSeed)
+void TrainSingle(string samplesFilename, string modelFilename, bool showProgress, bool showMerges, bool skipSearch, bool noRandom)
 {
-	auto t = customSeed == -1 ? time(NULL) : customSeed;	
-	srand((unsigned)t);
-
 	cout << "Cargando muestras" << endl;
 	SamplesReader reader;
 	SamplesReader::TSamples pos, neg;
@@ -46,12 +43,13 @@ void TrainMultiple(string samplesFilename, string modelsManifestFilename, int co
 	}
 	manifest << "# Manifiesto de clasificador" << endl;
 	manifest << "# Los siguientes archivos de modelos referenciados" << endl;
-	string modelFilename;
+	string modelFilename;	
 	for(int i=0; i<count; i++)
 	{
 		modelFilename = string("automata-") + lexical_cast<string>(i) + ".auto";
-		TrainSingle(samplesFilename, modelFilename, showProgress, showMerges, skipSearch, noRandom, customSeed);
+		TrainSingle(samplesFilename, modelFilename, showProgress, showMerges, skipSearch, noRandom);
 		manifest << modelFilename << endl;
+		cout << "Progreso global: modelo " << i << " (" << (i*100/count) << "%)" << endl;
 	}
 	manifest.close();
 }
@@ -334,10 +332,12 @@ int main(int argc, char* argv[])
 			bool showProgress, showMerges, skipSearch, noRandom;
 			int customSeed;
 			ParseTrainOptions(arguments.begin()+3, arguments.end(), &showProgress, &showMerges, &skipSearch, &noRandom, &customSeed);
+			auto t = customSeed == -1 ? time(NULL) : customSeed;	
+			srand((unsigned)t);
 			if(trainSingle) 
 			{
-				cout << "Entrenar modelo" << endl ;
-				TrainSingle(samplesFilename, modelFilename, showProgress, showMerges, skipSearch, noRandom, customSeed);
+				cout << "Entrenar modelo" << endl;				
+				TrainSingle(samplesFilename, modelFilename, showProgress, showMerges, skipSearch, noRandom);
 			}
 			if (trainMultiple) 
 			{
