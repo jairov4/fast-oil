@@ -6,7 +6,7 @@ class BitVector
 {
 public:
 	typedef unsigned __int64 TokenType;
-	static const unsigned int TotalTokens = 3;
+	static const unsigned int TotalTokens = 64;
 	static const unsigned int BitsPerToken = sizeof(TokenType)*8;
 	static const unsigned int TotalBits = TotalTokens * BitsPerToken;	
 
