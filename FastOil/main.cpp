@@ -49,7 +49,7 @@ void TrainMultiple(string samplesFilename, string modelsManifestFilename, int co
 		modelFilename = string("automata-") + lexical_cast<string>(i) + ".auto";
 		TrainSingle(samplesFilename, modelFilename, showProgress, showMerges, skipSearch, noRandom);
 		manifest << modelFilename << endl;
-		cout << "Progreso global: modelo " << i << " (" << (i*100/count) << "%)" << endl;
+		cout << "Progreso global: modelo " << i << " (" << ((i+1)*100/count) << "%)" << endl;
 	}
 	manifest.close();
 }
@@ -170,8 +170,7 @@ void TestMultiple(string samplesFilename, string modelsManifestFilename, string 
 	ofstream report(reportFilename);
 	if(!report.is_open())
 	{
-		throw std::exception("Error abriendo el archivo de reporte");
-		return;
+		throw std::exception("Error abriendo el archivo de reporte");		
 	}
 	
 	cout << "Evaluando..." << endl;
@@ -289,7 +288,7 @@ int main(int argc, char* argv[])
 				<< "\tEntrena a partir de las muestras del archivo <samples> un solo" << endl
 				<< "\tmodelo y lo guarda en el archivo <model>" << endl
 				<< endl
-				<< "train_multiple <samples> <model> <count> [--skip-search] [--no-random] [--seed=N] [-v]" << endl
+				<< "train_multiple <samples> <models-manifest> <count> [--skip-search] [--no-random] [--seed=N] [-v]" << endl
 				<< "\tEntrena a partir de las muestras del archivo <samples> varios modelos" << endl
 				<< "\tque pueden ser utilizados como un comite de expertos" << endl
 				<< endl
@@ -371,4 +370,5 @@ int main(int argc, char* argv[])
 		cout << "Unexpected error: " << msg << endl;
 		throw e;
 	}
+	return 0;
 }
