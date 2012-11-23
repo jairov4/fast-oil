@@ -1,8 +1,8 @@
 #include "stdafx.h"
-#include "Ndfa.h"
+#include "Nfa.h"
 #include "SamplesReader.h"
 #include "OilTrainer.h"
-#include "NdfaDotExporter.h"
+#include "NfaDotExporter.h"
 #include "Testing.h"
 
 using namespace std;
@@ -55,7 +55,7 @@ void TrainMultiple(string samplesFilename, string modelsManifestFilename, int co
 }
 
 // Prueba una muestra con el clasificador NDFA
-int TestSample(ofstream& report, size_t n, const Ndfa& model, const SamplesReader::TSample& sample)
+int TestSample(ofstream& report, size_t n, const Nfa& model, const SamplesReader::TSample& sample)
 {
 	auto c = model.IsMatch(sample);		
 	report << "Evaluation # " << n << " class: " << c << endl;
@@ -145,7 +145,7 @@ void ReadManifest(string manifestFilename, vector<string>& models)
 void TestMultiple(string samplesFilename, string modelsManifestFilename, string reportFilename)
 {
 	SamplesReader::TSamples pos, neg;
-	vector<Ndfa> models;
+	vector<Nfa> models;
 		
 	// Carga modelos del clasificador
 	{

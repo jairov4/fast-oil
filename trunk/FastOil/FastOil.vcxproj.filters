@@ -18,30 +18,24 @@
     <ClInclude Include="OilTrainer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="BitVector.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="stdafx.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Ndfa.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Testing.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="NdfaDotExporter.h">
+    <ClInclude Include="SamplesReader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SamplesReader.h">
+    <ClInclude Include="Nfa.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NfaDotExporter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OilTrainer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="BitVector.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
@@ -50,16 +44,16 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Ndfa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Testing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="NdfaDotExporter.cpp">
+    <ClCompile Include="SamplesReader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SamplesReader.cpp">
+    <ClCompile Include="Nfa.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NfaDotExporter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

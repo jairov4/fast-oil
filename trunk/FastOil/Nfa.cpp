@@ -1,5 +1,5 @@
 #include "StdAfx.h"
-#include "Ndfa.h"
+#include "Nfa.h"
 
 using namespace std;
 
@@ -7,7 +7,7 @@ using namespace std;
     La cantidad de estados del automata es variable pero la longitud del alfabeto debe ser
 		especificada y no podra ser cambiada.
 */
-Ndfa::Ndfa(unsigned alpha)
+Nfa::Nfa(unsigned alpha)
 	: 	
 	AlphabetLenght(alpha),
 	ActiveStates(), 
@@ -15,27 +15,47 @@ Ndfa::Ndfa(unsigned alpha)
 	Final(),
 	Succesors(), 
 	Predecessors()
-{
-	ActiveStates.ClearAll();
-	Initial.ClearAll();
-	Final.ClearAll();
+{	
 }
 
-Ndfa::~Ndfa(void)
+Nfa::~Nfa(void)
 {
+}
+
+void _SetBit(Nfa::TTokenVector&& vec, unsigned bit)
+{
+	_bittestandset64((__int64*)&vec[0], bit);
+}
+
+void _ClearBit(Nfa::TTokenVector&& vec, unsigned bit)
+{
+	_bittestandclear64((__int64*)&vec[0], bit);
+}
+
+bool _TestBit(Nfa::TTokenVector&& vec, unsigned bit)
+{
+	return _bittest64((__int64*)&vec[0], bit);
+}
+
+void _ClearAll(Nfa::TTokenVector& vec)
+{
+	for(auto i=vec.begin(); i!=vec.end(); i++)
+	{
+		*i = 0;
+	}
 }
 
 /** Indica si una muestra es reconocida por el automata
 */
-bool Ndfa::IsMatch(Ndfa::TSampleConstIter begin, Ndfa::TSampleConstIter end) const
+bool Nfa::IsMatch(Nfa::TSampleConstIter begin, Nfa::TSampleConstIter end) const
 {
-	BitVector* next = &BitVector();
-	BitVector* current = &BitVector(Initial); // empezamos con una copia de Initial
+	TTokenVector* next = new TTokenVector(Initial.size(), 0);	
+	TTokenVector* current = new TTokenVector(Initial); // empezamos con una copia de Initial	
 	unsigned sym;
 	for (auto i=begin; i!=end; i++)
 	{
 		sym = *i;
-		next->ClearAll();
+		_ClearAll(*next);
 		bool any = false;
 		for (auto it=current->GetBitSetIterator(); !it.IsEnd(); it.Next())
 		{
@@ -56,14 +76,14 @@ bool Ndfa::IsMatch(Ndfa::TSampleConstIter begin, Ndfa::TSampleConstIter end) con
 
 /** Indica si una muestra es reconocida por el automata
 */
-bool Ndfa::IsMatch( const TSample& sample ) const
+bool Nfa::IsMatch( const TSample& sample ) const
 {
 	return IsMatch(sample.begin(), sample.end());
 }
 
 /** Combina los estados suministrados. El segundo estado es eliminado
 */
-void Ndfa::Merge( unsigned ns1, unsigned ns2 )
+void Nfa::Merge( unsigned ns1, unsigned ns2 )
 {
 	assert(ActiveStates.Test(ns1));
 	assert(ActiveStates.Test(ns2));
@@ -100,9 +120,8 @@ void Ndfa::Merge( unsigned ns1, unsigned ns2 )
 
 /** Activa un estado para que pueda ser usado
 */
-void Ndfa::ActivateState( unsigned st )
-{
-	assert(st < BitVector::TotalBits);
+void Nfa::ActivateState( unsigned st )
+{	
 	// si no estaba activo toca activarlo
 	if(!ActiveStates.Set(st))
 	{
@@ -125,7 +144,7 @@ void Ndfa::ActivateState( unsigned st )
 /** Añade la informacion necesaria a la estructura de datos para que el automata
     contenga una transicion desde el estado src al estado dest con el simbolo sym
 */
-void Ndfa::SetTransition( unsigned src, unsigned dest, TSymbol sym )
+void Nfa::SetTransition( unsigned src, unsigned dest, TSymbol sym )
 {
 	assert(sym < GetAlphabetLenght());
 	
@@ -139,26 +158,26 @@ void Ndfa::SetTransition( unsigned src, unsigned dest, TSymbol sym )
 
 /** Ajusta el estado como estado inicial
 */
-void Ndfa::SetInitial( unsigned st )
+void Nfa::SetInitial( unsigned st )
 {
 	// activar el estado
 	ActivateState(st);
-	Initial.Set(st);
+	_SetBit(Initial, st);
 }
 
 /** Ajusta el estado como estado final
 */
-void Ndfa::SetFinal( unsigned st )
+void Nfa::SetFinal( unsigned st )
 {
 	// activar el estado
 	ActivateState(st);
-	Final.Set(st);
+	_SetBit(Final, st);
 }
 
 /** Obtiene un arreglo de bits que representa los estados que son predecesores de un
     estado determinado por un simbolo determinado
 */
-BitVector& Ndfa::_GetPred( unsigned state, TSymbol sym )
+BitVector& Nfa::_GetPred( unsigned state, TSymbol sym )
 {
 	return Predecessors[_GetIndex(state, sym)];
 }
@@ -166,7 +185,7 @@ BitVector& Ndfa::_GetPred( unsigned state, TSymbol sym )
 /** Obtiene un arreglo de bits que representa los estados que son sucesores de un
     estado determinado por un simbolo determinado
 */
-BitVector& Ndfa::_GetSuc( unsigned state, TSymbol sym )
+BitVector& Nfa::_GetSuc( unsigned state, TSymbol sym )
 {
 	return Succesors[_GetIndex(state, sym)];
 }
@@ -174,7 +193,7 @@ BitVector& Ndfa::_GetSuc( unsigned state, TSymbol sym )
 /** Obtiene un arreglo de bits que representa los estados que son predecesores de un
     estado determinado por un simbolo determinado
 */
-const BitVector& Ndfa::GetPredecessors( unsigned state, TSymbol sym ) const
+const std::vector<Nfa::TToken>& Nfa::GetPredecessors( unsigned state, TSymbol sym ) const
 {
 	return Predecessors[_GetIndex(state, sym)];
 }
@@ -182,42 +201,42 @@ const BitVector& Ndfa::GetPredecessors( unsigned state, TSymbol sym ) const
 /** Obtiene un arreglo de bits que representa los estados que son sucesores de un
     estado determinado por un simbolo determinado
 */
-const BitVector& Ndfa::GetSuccesors( unsigned state, TSymbol sym ) const
+const std::vector<Nfa::TToken>& Nfa::GetSuccesors( unsigned state, TSymbol sym ) const
 {
 	return Succesors[_GetIndex(state, sym)];
 }
 
 /** Obtiene un vector de bits que representa los estados etiquetados como estados iniciales
 */
-const BitVector& Ndfa::GetInitial() const
+const std::vector<Nfa::TToken>& Nfa::GetInitial() const
 {
 	return Initial;
 }
 
 /** Obtiene un vector de bits que representa los estados etiquetados como estados finales
 */
-const BitVector& Ndfa::GetFinal() const
+const std::vector<Nfa::TToken>& Nfa::GetFinal() const
 {
 	return Final;
 }
 
 /** Obtiene un vector de bits que representa los estados etiquetados como estados activos
 */
-const BitVector& Ndfa::GetActiveStates() const
+const std::vector<Nfa::TToken>& Nfa::GetActiveStates() const
 {
 	return ActiveStates;
 }
 
 /** Obtiene la longitud del alfabeto del automata
 */
-unsigned Ndfa::GetAlphabetLenght() const
+unsigned Nfa::GetAlphabetLenght() const
 {
 	return AlphabetLenght;
 }
 
 /** Obtiene el indice para ser usado con los vectores de predecesores y sucesores
 */
-unsigned Ndfa::_GetIndex( unsigned st, TSymbol sym ) const
+unsigned Nfa::_GetIndex( unsigned st, TSymbol sym ) const
 {	
 	assert(sym < AlphabetLenght);
 	return st*AlphabetLenght+sym;

@@ -1,6 +1,6 @@
 #include "StdAfx.h"
-#include "Ndfa.h"
-#include "NdfaDotExporter.h"
+#include "Nfa.h"
+#include "NfaDotExporter.h"
 #include "OilTrainer.h"
 #include "SamplesReader.h"
 #include "Testing.h"
@@ -11,33 +11,33 @@ namespace Testing {
 
 	void Test1()
 	{
-		Ndfa ndfa(5);		
-		ndfa.SetTransition(0, 1, 3);
-		ndfa.SetInitial(0);
-		ndfa.SetFinal(1);
+		Nfa nfa(5);		
+		nfa.SetTransition(0, 1, 3);
+		nfa.SetInitial(0);
+		nfa.SetFinal(1);
 
 		unsigned array1[] = {1,2,3,4};
 		unsigned array2[] = {1};
 		unsigned array3[] = {3};
 				
-		assert(!ndfa.IsMatch(OilTrainer::TSample(array1, array1+4)));
-		assert(!ndfa.IsMatch(OilTrainer::TSample(array2, array2+1)));
-		assert(ndfa.IsMatch(OilTrainer::TSample(array3, array3+1)));
+		assert(!nfa.IsMatch(OilTrainer::TSample(array1, array1+4)));
+		assert(!nfa.IsMatch(OilTrainer::TSample(array2, array2+1)));
+		assert(nfa.IsMatch(OilTrainer::TSample(array3, array3+1)));
 	}
 
 	void Test2()
 	{
-		Ndfa ndfa(2);		
-		ndfa.SetTransition(0, 1, 0);
-		ndfa.SetTransition(0, 0, 1);
-		ndfa.SetInitial(0);
-		ndfa.SetFinal(1);
-		NdfaDotExporter::Export(ndfa, "test2.dot");
+		Nfa nfa(2);		
+		nfa.SetTransition(0, 1, 0);
+		nfa.SetTransition(0, 0, 1);
+		nfa.SetInitial(0);
+		nfa.SetFinal(1);
+		NdfaDotExporter::Export(nfa, "test2.dot");
 	}
 
 	void Test3()
 	{
-		Ndfa ndfa(2);		
+		Nfa ndfa(2);		
 		ndfa.SetTransition(0, 1, 0);
 		ndfa.SetTransition(0, 0, 1);
 		ndfa.SetInitial(0);
@@ -46,39 +46,6 @@ namespace Testing {
 		NdfaDotExporter::Export(ndfa, "test3.dot");
 	}
 
-	void Test4()
-	{
-		BitVector vec;
-		vec.ClearAll();
-		vec.Set(3);
-		vec.Set(5);
-		vec.Set(6);
-		vec.Set(63);
-		vec.Set(64);
-		vec.Set(66);
-		int i = 0;
-		for(auto it=vec.GetBitSetIterator(); !it.IsEnd(); it.Next())
-		{
-			auto n = it.GetBit();		
-			// implicaciones p -> q  === ~p | q
-			assert(i!=0 || n==3); // (i=0) -> n=3
-			assert(i!=1 || n==5);
-			assert(i!=2 || n==6);
-			assert(i!=3 || n==63);
-			assert(i!=4 || n==64);
-			assert(i!=5 || n==66);
-			i++;			
-		}
-		assert(i == 6);
-
-		vec = BitVector();
-		vec.ClearAll();
-		vec.Set(63);
-		for(auto it=vec.GetBitSetIterator(); !it.IsEnd(); it.Next())
-		{
-			assert(it.GetBit()==63);			
-		}
-	}
 		
 	OilTrainer::TSamples makeSamples(OilTrainer::TSymbol* ini, size_t sampLen, size_t total)
 	{
@@ -157,7 +124,7 @@ namespace Testing {
 		s.push_back(Test1);
 		s.push_back(Test2);
 		s.push_back(Test3);
-		s.push_back(Test4);
+		//s.push_back(Test4);
 		s.push_back(Test5);
 		s.push_back(Test6);
 		s.push_back(Test7);

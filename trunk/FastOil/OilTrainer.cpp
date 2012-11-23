@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "OilTrainer.h"
-#include "NdfaDotExporter.h"
+#include "NfaDotExporter.h"
 
 using namespace std;
 using boost::lexical_cast;
@@ -11,12 +11,12 @@ typedef OilTrainer::TSymbol TSymbol;
 
 /** Cuenta el numero de muestras de una secuencia que son reconocidas por un automata
 */
-int _countMatches(TSamples::const_iterator begin, TSamples::const_iterator end, const Ndfa& ndfa)
+int _countMatches(TSamples::const_iterator begin, TSamples::const_iterator end, const Nfa& nfa)
 {
 	int count = 0;
 	for (auto it=begin; it!=end; ++it)
 	{
-		bool match = ndfa.IsMatch(*it);
+		bool match = nfa.IsMatch(*it);
 		if(match) count++;
 	}
 	return count;
@@ -24,18 +24,18 @@ int _countMatches(TSamples::const_iterator begin, TSamples::const_iterator end, 
 
 /** Cuenta el numero de muestras de una secuencia que son reconocidas por un automata
 */
-int _countMatches(const TSamples& samples, const Ndfa& ndfa)
+int _countMatches(const TSamples& samples, const Nfa& nfa)
 {	
-	return _countMatches(samples.cbegin(), samples.cend(), ndfa);
+	return _countMatches(samples.cbegin(), samples.cend(), nfa);
 }
 
 /** Indica si alguna muestra es reconocida por el automata
 */
-bool _anyMatch(const TSamples& samples, const Ndfa& ndfa)
+bool _anyMatch(const TSamples& samples, const Nfa& nfa)
 {	
 	for (auto it=samples.cbegin(); it!=samples.cend(); ++it)
 	{
-		auto match = ndfa.IsMatch(*it);
+		auto match = nfa.IsMatch(*it);
 		if(match) return true;
 	}
 	return false;
@@ -44,11 +44,11 @@ bool _anyMatch(const TSamples& samples, const Ndfa& ndfa)
 
 /** Indica si todas las muestras son reconocidas por un automata
 */
-bool _allMatch(TSamples::const_iterator begin, TSamples::const_iterator end, const Ndfa& ndfa)
+bool _allMatch(TSamples::const_iterator begin, TSamples::const_iterator end, const Nfa& nfa)
 {
 	for (auto it=begin; it!=end; ++it)
 	{
-		auto match = ndfa.IsMatch(*it);
+		auto match = nfa.IsMatch(*it);
 		if(!match) return false;
 	}
 	return true;
@@ -57,9 +57,9 @@ bool _allMatch(TSamples::const_iterator begin, TSamples::const_iterator end, con
 
 /** Indica si todas las muestras son reconocidas por un automata
 */
-bool _allMatch(const TSamples& samples, const Ndfa& ndfa)
+bool _allMatch(const TSamples& samples, const Nfa& nfa)
 {
-	return _allMatch(samples.cbegin(), samples.cend(), ndfa);
+	return _allMatch(samples.cbegin(), samples.cend(), nfa);
 }
 
 /** Comparador de muestras usado para ordenar las muestras en forma lexicografica.
@@ -78,11 +78,11 @@ bool _sampleComparer(const TSample& sample1, const TSample sample2)
 	@len Longitud de cada muestra
 	@alpha Longitud del alfabeto
 */
-Ndfa* OilTrainer::Train(TSamples& positiveSamples, TSamples& negativeSamples, unsigned alpha )
+Nfa* OilTrainer::Train(TSamples& positiveSamples, TSamples& negativeSamples, unsigned alpha )
 {
-	ndfa = new Ndfa(alpha);
-	testNdfa = new Ndfa(alpha);
-	bestNdfa = new Ndfa(alpha);
+	nfa = new Nfa(alpha);
+	testNfa = new Nfa(alpha);
+	bestNfa = new Nfa(alpha);
 	
 	// Asegura orden lexicografico
 	sort(positiveSamples.begin(), positiveSamples.end(), _sampleComparer);
@@ -94,7 +94,7 @@ Ndfa* OilTrainer::Train(TSamples& positiveSamples, TSamples& negativeSamples, un
 	int currentPosSample=0;
 	for (auto currentPosSampleIter=posSamples->cbegin(); currentPosSampleIter != posSamples->cend(); ++currentPosSampleIter)
 	{		
-		auto acceptPos = ndfa->IsMatch(*currentPosSampleIter);
+		auto acceptPos = nfa->IsMatch(*currentPosSampleIter);
 		if(!acceptPos)
 		{
 			CoreceMatch(currentPosSampleIter);
@@ -104,20 +104,20 @@ Ndfa* OilTrainer::Train(TSamples& positiveSamples, TSamples& negativeSamples, un
 
 		if(ShowProgress)
 		{
-			//NdfaDotExporter::Export(*ndfa, "ndfa" + lexical_cast<string>(currentPosSample) + ".dot");
+			//NfaDotExporter::Export(*nfa, "nfa" + lexical_cast<string>(currentPosSample) + ".dot");
 			cout << "Procesada muestra " << currentPosSample << " de " << posSamples->size() << " (" << (currentPosSample*100L/posSamples->size()) << "%)" << endl;
 		}
 	}
 
-	delete testNdfa;
-	delete bestNdfa;
+	delete testNfa;
+	delete bestNfa;
 	
 	// Asegura que reconoce todas las muestras positivas
-	assert(_allMatch(positiveSamples, *ndfa));
+	assert(_allMatch(positiveSamples, *nfa));
 	// Asegura que no reconoce ninguna muestra negativa
-	assert(!_anyMatch(negativeSamples, *ndfa));
+	assert(!_anyMatch(negativeSamples, *nfa));
 
-	return ndfa;
+	return nfa;
 }
 
 /** Agrega estados al automata de tal manera que lo fuerza a reconocer una nueva muestra positiva
@@ -134,10 +134,10 @@ void OilTrainer::CoreceMatch(TSamples::const_iterator currentPosSampleIterator)
 	// ultimo estado añadido
 	int lastStateId = -1;
 
-	auto inactive = ndfa->GetActiveStates();
+	auto inactive = nfa->GetActiveStates();
 	// negar los activos nos indica cuales son los inactivos
 	inactive.Not();
-		
+
 	// indica en que simbolo de la muestra vamos
 	auto symIter = currentPosSample.cbegin();
 
@@ -148,19 +148,19 @@ void OilTrainer::CoreceMatch(TSamples::const_iterator currentPosSampleIterator)
 		if(lastStateId == -1) // indica que es el primer estado
 		{
 			// El primer estado es inicial
-			ndfa->SetInitial(inactiveStateId);
+			nfa->SetInitial(inactiveStateId);
 		} else {			
-			ndfa->SetTransition(lastStateId, inactiveStateId, *symIter);			
+			nfa->SetTransition(lastStateId, inactiveStateId, *symIter);			
 			// avanza al siguiente simbolo
 			symIter++;
 		}
 		lastStateId = inactiveStateId;
 		randomIds.push_back(lastStateId);				
 	}
-	ndfa->SetFinal(lastStateId);
+	nfa->SetFinal(lastStateId);
 
 	// Aseguramos que reconocemos la nueva muestra
-	assert(ndfa->IsMatch(currentPosSample));	
+	assert(nfa->IsMatch(currentPosSample));	
 }
 
 /** Realiza todas las mezclas de estados posibles sobre el automata
@@ -187,19 +187,19 @@ void OilTrainer::DoAllMergesPossible(TSamples::const_iterator currentPosSampleIt
 		for (unsigned j=0; j<i; j++)
 		{
 			int s2 = randomIds[j];
-			*testNdfa = *ndfa; // copiamos en el de prueba
-			testNdfa->Merge(s2, s1); // hacemos la mezcla
+			*testNfa = *nfa; // copiamos en el de prueba
+			testNfa->Merge(s2, s1); // hacemos la mezcla
 
-			bool anyNegMatch = _anyMatch(*negSamples, *testNdfa);
+			bool anyNegMatch = _anyMatch(*negSamples, *testNfa);
 			if(anyNegMatch) continue;
 			
 			// cuenta las que reconozca en adelante porque las anteriores y la actual es fijo que debe reconocerlas
-			int score = _countMatches(nextPosSampleIterator, posSamples->cend(), *testNdfa);
+			int score = _countMatches(nextPosSampleIterator, posSamples->cend(), *testNfa);
 			if(score > bestScore)
 			{
 				bestScore = score;
 				bestJ = j;
-				swap(bestNdfa, testNdfa);
+				swap(bestNfa, testNfa);
 				// acaba con la busqueda de estados que se puedan combinar					
 				if(SkipSearchBestMerge) break;
 			}
@@ -218,10 +218,10 @@ void OilTrainer::DoAllMergesPossible(TSamples::const_iterator currentPosSampleIt
 			if(ShowMerges)
 			{
 				cout << "Mezcla "<< bestJ << " " << i << " -> " << randomIds[bestJ] << " " << s1 << " (score: " << bestScore << ")" << endl;
-				//NdfaDotExporter::Export(*bestNdfa, "ndfa"+lexical_cast<string>(currentPosSampleIterator-posSamples->cbegin())+"-"+lexical_cast<string>(mergeCounter)+".dot");
+				//NfaDotExporter::Export(*bestNfa, "nfa"+lexical_cast<string>(currentPosSampleIterator-posSamples->cbegin())+"-"+lexical_cast<string>(mergeCounter)+".dot");
 			}
 			// intercambia los automatas de prueba y final
-			swap(ndfa, bestNdfa);
+			swap(nfa, bestNfa);
 						
 			if(DoNotUseRandomSort) 
 			{
@@ -248,9 +248,9 @@ void OilTrainer::DoAllMergesPossible(TSamples::const_iterator currentPosSampleIt
 	}
 	
 	// no debe quedar reconociendo muestras negativas
-	assert(!_anyMatch(*negSamples, *ndfa));
+	assert(!_anyMatch(*negSamples, *nfa));
 	// no debe perderse la capacidad de reconocer la nueva muestra ni las anteriores
-	assert(_allMatch(posSamples->cbegin(), nextPosSampleIterator, *ndfa));
+	assert(_allMatch(posSamples->cbegin(), nextPosSampleIterator, *nfa));
 }
 
 OilTrainer::OilTrainer()
