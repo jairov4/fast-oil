@@ -191,19 +191,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="BitVector.h" />
-    <ClInclude Include="Ndfa.h" />
-    <ClInclude Include="NdfaDotExporter.h" />
+    <ClInclude Include="Nfa.h" />
+    <ClInclude Include="NfaDotExporter.h" />
     <ClInclude Include="OilTrainer.h" />
     <ClInclude Include="SamplesReader.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Testing.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="BitVector.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Ndfa.cpp" />
-    <ClCompile Include="NdfaDotExporter.cpp" />
+    <ClCompile Include="Nfa.cpp" />
+    <ClCompile Include="NfaDotExporter.cpp" />
     <ClCompile Include="OilTrainer.cpp" />
     <ClCompile Include="SamplesReader.cpp" />
     <ClCompile Include="stdafx.cpp">

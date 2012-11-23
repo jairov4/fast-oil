@@ -1,22 +1,22 @@
 #pragma once
 
-#include "Ndfa.h"
+#include "Nfa.h"
 #include <vector>
 
 class OilTrainer
 {
 public:
-	typedef Ndfa::TSymbol TSymbol;
-	typedef Ndfa::TSample TSample;
+	typedef Nfa::TSymbol TSymbol;
+	typedef Nfa::TSample TSample;
 	typedef std::vector<TSample> TSamples;
 	
 private:	
 	// donde se agregaron los estados en el arreglo de identificadores
 	unsigned statesAddedBeginInRandom;
 
-	Ndfa* ndfa;
-	Ndfa* testNdfa;
-	Ndfa* bestNdfa;
+	Nfa* nfa;
+	Nfa* testNfa;
+	Nfa* bestNfa;
 
 	TSamples* posSamples;
 	TSamples* negSamples;
@@ -34,7 +34,7 @@ public:
 	bool ShowPossibleMerges;
 	bool DoNotUseRandomSort;
 		
-	Ndfa* Train(TSamples& posSamples, TSamples& negSamples, unsigned alpha);	
+	Nfa* Train(TSamples& posSamples, TSamples& negSamples, unsigned alpha);	
 	OilTrainer();
 };
 
