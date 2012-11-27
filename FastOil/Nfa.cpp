@@ -3,6 +3,45 @@
 
 using namespace std;
 
+///////////////////UTIL
+void _SetBit(Nfa::TTokenVector vec, unsigned bit)
+{
+	_bittestandset64((__int64*)vec, bit);
+}
+
+void _ClearBit(Nfa::TTokenVector vec, unsigned bit)
+{
+	_bittestandreset64((__int64*)vec, bit);
+}
+
+bool _TestBit(const Nfa::TTokenVector vec, unsigned bit)
+{
+	return _bittest64((__int64*)vec, bit);
+}
+
+void _ClearAllBits(Nfa::TTokenVector vec, unsigned tokens)
+{
+	memset(vec, 0, tokens * sizeof(Nfa::TToken));	
+}
+
+void _OrAndClearSecondBit(Nfa::TTokenVector vec, unsigned b1, unsigned b2)
+{
+	_bittest64(vec, b1);
+	auto c2 = _bittestandreset64(vec, b2);
+	if(c2) _bittestandset64(vec, b1);	
+}
+
+Nfa::TTokenVector AllocTokens(unsigned tokens)
+{
+	return (Nfa::TTokenVector)malloc(tokens * sizeof(Nfa::TToken));
+}
+
+Nfa::TTokenVector ReallocTokens(Nfa::TTokenVector v, unsigned tokens)
+{
+	return (Nfa::TTokenVector)realloc(v, tokens * sizeof(Nfa::TToken));
+}
+///////////////////!UTIL
+
 /** Construye un nuevo automata no determinista vacio.
     La cantidad de estados del automata es variable pero la longitud del alfabeto debe ser
 		especificada y no podra ser cambiada.
@@ -22,55 +61,82 @@ Nfa::~Nfa(void)
 {
 }
 
-void _SetBit(Nfa::TTokenVector&& vec, unsigned bit)
+size_t Nfa::GetVectorSize() const
 {
-	_bittestandset64((__int64*)&vec[0], bit);
+	return Tokens * sizeof(Nfa::TToken);
 }
 
-void _ClearBit(Nfa::TTokenVector&& vec, unsigned bit)
+Nfa::TTokenVector Nfa::CreateTokenVector() const
 {
-	_bittestandclear64((__int64*)&vec[0], bit);
+	return AllocTokens(Tokens);
 }
 
-bool _TestBit(Nfa::TTokenVector&& vec, unsigned bit)
+void Nfa::CloneTokenVector(Nfa::TTokenVector dest, const Nfa::TTokenVector source) const
 {
-	return _bittest64((__int64*)&vec[0], bit);
+	memcpy(dest, source, GetVectorSize());
 }
 
-void _ClearAll(Nfa::TTokenVector& vec)
+// TODO: cambiar usando AVX
+void Nfa::ClearTokenVector(Nfa::TTokenVector dest) const
 {
-	for(auto i=vec.begin(); i!=vec.end(); i++)
+	_ClearAllBits(dest, Tokens);
+}
+
+// TODO: cambiar usando AVX (haria 4 por instruccion)
+void Nfa::OrTokenVector(Nfa::TTokenVector dest, const Nfa::TTokenVector v) const
+{
+	for(unsigned i=0; i<Tokens; i++)
 	{
-		*i = 0;
+		dest[i] |= v[i];
 	}
+}
+
+// TODO: cambiar usando AVX (haria 4 por instruccion)
+bool Nfa::AnyAndTokenVector(const Nfa::TTokenVector dest, const Nfa::TTokenVector v) const
+{
+	for(unsigned i=0; i<Tokens; i++)
+	{
+		if(dest[i] & v[i]) 
+		{
+			return true;
+		}
+	}	
+	return false;
 }
 
 /** Indica si una muestra es reconocida por el automata
 */
 bool Nfa::IsMatch(Nfa::TSampleConstIter begin, Nfa::TSampleConstIter end) const
 {
-	TTokenVector* next = new TTokenVector(Initial.size(), 0);	
-	TTokenVector* current = new TTokenVector(Initial); // empezamos con una copia de Initial	
-	unsigned sym;
+	TTokenVector next = CreateTokenVector();
+	TTokenVector current = CreateTokenVector();
+	CloneTokenVector(current, Initial);
+	unsigned sym;	
 	for (auto i=begin; i!=end; i++)
 	{
 		sym = *i;
-		_ClearAll(*next);
-		bool any = false;
-		for (auto it=current->GetBitSetIterator(); !it.IsEnd(); it.Next())
+		ClearTokenVector(next);
+		bool any = false;		
+		unsigned BitIdx = 0;
+		for(unsigned tokenIdx=0; tokenIdx<Tokens; tokenIdx++)
 		{
-			auto n = it.GetBit();
-			any = true;
-			// pongo "const auto&" con el fin de obtener una referencia 
-			// sin posibilidad de modificacion lo cual no requiere la copia
-			// del objeto completo
-			const auto& a = GetSuccesors(n, sym);
-			next->Or(a);
+			TToken fetch = current[tokenIdx];
+			unsigned long idx;
+			while(_BitScanForward64(&idx, fetch))
+			{
+				_ClearBit(&fetch, idx);
+				unsigned bit = BitIdx + idx;
+				any = true;
+				auto s = GetSuccesors(bit, sym);
+				OrTokenVector(next, s);				
+			}
+			BitIdx += BitsPerToken;
 		}		
 		if(!any) return false;
 		std::swap(next, current);
 	}
-	auto match = current->TestAnd(Final);
+	
+	auto match = AnyAndTokenVector(current, Final);
 	return match;
 }
 
@@ -85,35 +151,59 @@ bool Nfa::IsMatch( const TSample& sample ) const
 */
 void Nfa::Merge( unsigned ns1, unsigned ns2 )
 {
-	assert(ActiveStates.Test(ns1));
-	assert(ActiveStates.Test(ns2));
-
-	Initial.OrBitsAndClearSecond(ns1, ns2);
-	Final.OrBitsAndClearSecond(ns1, ns2);
-	ActiveStates.Clear(ns2);
-
+	assert(_TestBit(ActiveStates, ns1));
+	assert(_TestBit(ActiveStates, ns2));
+	
+	_OrAndClearSecondBit(Initial, ns1, ns2);
+	_OrAndClearSecondBit(Final, ns1, ns2);
+	_ClearBit(ActiveStates, ns2);
+	
 	for (TSymbol sym=0; sym<AlphabetLenght; sym++)
-	{
-		auto& predS1 = _GetPred(ns1, sym);
-		auto& predS2 = _GetPred(ns2, sym);
-		predS1.Or(predS2); // ahora predecesores de s1 tambien tiene los de s2
-		for (auto it=predS2.GetBitSetIterator(); !it.IsEnd(); it.Next())
-		{
-			auto n = it.GetBit();
-			auto& suc = _GetSuc(n, sym);
-			suc.Set(ns1); // estado n ahora va a s1
-			suc.Clear(ns2); // estado n iba a s2
-		}		
+	{	
+		unsigned long bitToken;
 
-		auto& sucS1 = _GetSuc(ns1, sym);
-		auto& sucS2 = _GetSuc(ns2, sym);
-		sucS1.Or(sucS2);
-		for (auto it=sucS2.GetBitSetIterator(); !it.IsEnd(); it.Next())
+		// Ajustar Predecesores 
+
+		auto predS1 = _GetPred(ns1, sym);
+		auto predS2 = GetPredecessors(ns2, sym);
+		OrTokenVector(predS1, predS2); // ahora predecesores de s1 tambien tiene los de s2
+		
+		bitToken = 0;
+		for(unsigned it=0; it<Tokens; it++)
 		{
-			auto n = it.GetBit();
-			auto& pred = _GetPred(n, sym);
-			pred.Set(ns1);
-			pred.Clear(ns2);			
+			TToken fetch = predS2[it];
+			unsigned long idx = 0;
+			while(_BitScanForward64(&idx, fetch))
+			{
+				_ClearBit(&fetch, idx);
+				unsigned state = idx + bitToken;
+				auto suc = _GetSuc(state, sym);
+				_SetBit(suc, ns1); // estado n ahora va a s1
+				_ClearBit(suc, ns2); // estado n iba a s2
+			}
+			bitToken += BitsPerToken;
+		}
+
+		// Ajustar Sucesores
+
+		auto sucS1 = _GetSuc(ns1, sym);
+		auto sucS2 = GetSuccesors(ns2, sym);
+		OrTokenVector(sucS1, sucS2);
+
+		bitToken = 0;
+		for(unsigned it=0; it<Tokens; it++)
+		{
+			TToken fetch = sucS2[it];
+			unsigned long idx = 0;
+			while(_BitScanForward64(&idx, fetch))
+			{
+				_ClearBit(&fetch, idx);
+				unsigned state = idx + bitToken;
+				auto pred = _GetPred(state, sym);				
+				_SetBit(pred, ns1); // estado n ahora va a s1
+				_ClearBit(pred, ns2); // estado n iba a s2
+			}
+			bitToken += BitsPerToken;
 		}
 	}
 }
@@ -151,9 +241,9 @@ void Nfa::SetTransition( unsigned src, unsigned dest, TSymbol sym )
 	// activar los estados
 	ActivateState(src);
 	ActivateState(dest);		
-
-	_GetSuc(src, sym).Set(dest);
-	_GetPred(dest, sym).Set(src);
+	
+	_SetBit(_GetSuc(src, sym), dest);
+	_SetBit(_GetPred(dest, sym), src);
 }
 
 /** Ajusta el estado como estado inicial
@@ -177,52 +267,52 @@ void Nfa::SetFinal( unsigned st )
 /** Obtiene un arreglo de bits que representa los estados que son predecesores de un
     estado determinado por un simbolo determinado
 */
-BitVector& Nfa::_GetPred( unsigned state, TSymbol sym )
+Nfa::TTokenVector Nfa::_GetPred( unsigned state, TSymbol sym )
 {
-	return Predecessors[_GetIndex(state, sym)];
+	return &Predecessors[_GetIndex(state, sym)];
 }
 
 /** Obtiene un arreglo de bits que representa los estados que son sucesores de un
     estado determinado por un simbolo determinado
 */
-BitVector& Nfa::_GetSuc( unsigned state, TSymbol sym )
+Nfa::TTokenVector Nfa::_GetSuc( unsigned state, TSymbol sym )
 {
-	return Succesors[_GetIndex(state, sym)];
+	return &Succesors[_GetIndex(state, sym)];
 }
 
 /** Obtiene un arreglo de bits que representa los estados que son predecesores de un
     estado determinado por un simbolo determinado
 */
-const std::vector<Nfa::TToken>& Nfa::GetPredecessors( unsigned state, TSymbol sym ) const
+const Nfa::TTokenVector Nfa::GetPredecessors( unsigned state, TSymbol sym ) const
 {
-	return Predecessors[_GetIndex(state, sym)];
+	return &Predecessors[_GetIndex(state, sym)];
 }
 
 /** Obtiene un arreglo de bits que representa los estados que son sucesores de un
     estado determinado por un simbolo determinado
 */
-const std::vector<Nfa::TToken>& Nfa::GetSuccesors( unsigned state, TSymbol sym ) const
+const Nfa::TTokenVector Nfa::GetSuccesors( unsigned state, TSymbol sym ) const
 {
-	return Succesors[_GetIndex(state, sym)];
+	return &Succesors[_GetIndex(state, sym)];
 }
 
 /** Obtiene un vector de bits que representa los estados etiquetados como estados iniciales
 */
-const std::vector<Nfa::TToken>& Nfa::GetInitial() const
+const Nfa::TTokenVector Nfa::GetInitial() const
 {
 	return Initial;
 }
 
 /** Obtiene un vector de bits que representa los estados etiquetados como estados finales
 */
-const std::vector<Nfa::TToken>& Nfa::GetFinal() const
+const Nfa::TTokenVector Nfa::GetFinal() const
 {
 	return Final;
 }
 
 /** Obtiene un vector de bits que representa los estados etiquetados como estados activos
 */
-const std::vector<Nfa::TToken>& Nfa::GetActiveStates() const
+const Nfa::TTokenVector Nfa::GetActiveStates() const
 {
 	return ActiveStates;
 }
