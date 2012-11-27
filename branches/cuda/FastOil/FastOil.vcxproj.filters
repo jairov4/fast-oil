@@ -62,5 +62,13 @@
     <ClCompile Include="SamplesReader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="CudaHost.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="nfa_eval.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
   </ItemGroup>
 </Project>
