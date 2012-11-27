@@ -12,6 +12,7 @@ public:
 	typedef std::vector<TSymbol> TSample;
 	typedef TSample::iterator TSampleIter;
 	typedef TSample::const_iterator TSampleConstIter;
+	bool EnableCuda;
 
 private:	
 	BitVector ActiveStates;
@@ -32,6 +33,7 @@ public:
 				
 	bool IsMatch(TSampleConstIter begin, TSampleConstIter end) const;
 	bool IsMatch(const TSample& sample) const;
+	bool IsMatchUsingCuda(TSampleConstIter begin, TSampleConstIter end) const;
 	void Merge(unsigned ns1, unsigned ns2);	
 	void SetTransition(unsigned src, unsigned dest, TSymbol sym);
 	void SetInitial(unsigned st);
