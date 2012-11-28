@@ -28,8 +28,8 @@ void TrainSingle(string samplesFilename, string modelFilename, bool showProgress
 	auto ndfa = trainer.Train(pos, neg, alpha);
 
 	cout << "Exportando modelo" << endl;
-	NdfaDotExporter::Export(*ndfa, modelFilename+".dot");
-	NdfaDotExporter::ExportDestinoPlainText(*ndfa, modelFilename);
+	NfaDotExporter::Export(*ndfa, modelFilename+".dot");
+	NfaDotExporter::ExportDestinoPlainText(*ndfa, modelFilename);
 	delete ndfa;
 }
 
@@ -83,7 +83,7 @@ void TestSingle(string samplesFilename, string modelFilename, string reportFilen
 {	
 	SamplesReader::TSamples pos, neg;
 	cout << "Cargando modelo." << endl;
-	auto model = NdfaDotExporter::ImportDestinoPlainText(modelFilename);
+	auto model = NfaDotExporter::ImportDestinoPlainText(modelFilename);
 
 	cout << "Cargando archivo de muestras." << endl;
 	SamplesReader reader;
@@ -154,7 +154,7 @@ void TestMultiple(string samplesFilename, string modelsManifestFilename, string 
 		ReadManifest(modelsManifestFilename, modelFiles);
 		for(auto i = modelFiles.begin(); i!=modelFiles.end(); i++)
 		{			
-			auto model = NdfaDotExporter::ImportDestinoPlainText(*i);
+			auto model = NfaDotExporter::ImportDestinoPlainText(*i);
 			models.push_back(model);
 			cout << "Modelo \"" << *i << "\" cargado." << endl;
 		}

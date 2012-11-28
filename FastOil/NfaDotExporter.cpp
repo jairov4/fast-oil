@@ -1,5 +1,5 @@
 #include "StdAfx.h"
-#include "NdfaDotExporter.h"
+#include "NfaDotExporter.h"
 
 using namespace std;
 using namespace boost::algorithm;
@@ -9,7 +9,25 @@ const string initialStyle = "style=\"filled\"";
 const string finalStyle = "style=\"bold,dashed\"";
 const string initialFinalStyle = "style=\"filled,bold,dashed\"";
 
-void NdfaDotExporter::Export(const Ndfa& ndfa, std::string filename)
+bool HasAnyTransition(const Nfa& nfa, unsigned state, Nfa::TSymbol sym)
+{	
+	for (unsigned i=0; i<nfa.GetMaxStates(); i++)
+	{
+		if(nfa.ExistTransition(state, i, sym)) return true;
+	}
+	return false;
+}
+
+bool HasAnyTransition(const Nfa& nfa, unsigned state)
+{	
+	for (Nfa::TSymbol sym=0; sym<nfa.GetAlphabetLenght(); sym++)
+	{
+		HasAnyTransition(nfa, state, sym);	
+	}
+	return false;
+}
+
+void NfaDotExporter::Export(const Nfa& nfa, std::string filename)
 {
 	ofstream out(filename);
 	
@@ -18,15 +36,13 @@ void NdfaDotExporter::Export(const Ndfa& ndfa, std::string filename)
 	out << "  node [shape=box width=0.1 height=0.1 fontname=Arial]" << endl;
 	out << "  edge [fontname=Arial]" << endl;
 
-	out << "/* Estados */" << endl;
-	for (auto it=ndfa.GetActiveStates().GetBitSetIterator(); !it.IsEnd(); it.Next())
-	{
-		unsigned i = it.GetBit();
-	
-		auto isInitial = ndfa.GetInitial().Test(i);
-		auto isFinal = ndfa.GetFinal().Test(i);
-		auto isDeleted = !ndfa.GetActiveStates().Test(i);
-		if(isDeleted) continue;
+	out << "/* Estados */" << endl;		
+	for (unsigned i=0; i<nfa.GetMaxStates(); i++)
+	{	
+		auto isInitial = nfa.IsInitial(i);
+		auto isFinal = nfa.IsFinal(i);
+		// omite los que no sirven
+		if(!isInitial && !isFinal && !HasAnyTransition(nfa, i)) continue;
 		string fmt;
 		if (isInitial && !isFinal) fmt = initialStyle;
 		else if (!isInitial && isFinal) fmt = finalStyle;
@@ -34,26 +50,21 @@ void NdfaDotExporter::Export(const Ndfa& ndfa, std::string filename)
 		
 		out << " s" << i << " [label=\"" << i << "\" " << fmt << "] " 
 			<< "/* I:"<< isInitial
-			<< " F:" << isFinal
-			<< " D:" << isDeleted
+			<< " F:" << isFinal			
 			<< " */" << endl;
 	}
 
 	list<string> l;
 	out << "/* Transiciones */" << endl;
-	for (auto it1=ndfa.GetActiveStates().GetBitSetIterator(); !it1.IsEnd(); it1.Next())
-	{
-		unsigned i = it1.GetBit();
-
-		if(!ndfa.GetActiveStates().Test(i)) continue;
-		for (auto it2=ndfa.GetActiveStates().GetBitSetIterator(); !it2.IsEnd(); it2.Next())
-		{
-			unsigned k = it2.GetBit();
-
+	for (unsigned i=0; i<nfa.GetMaxStates(); i++)
+	{		
+		for (unsigned k=0; k<nfa.GetMaxStates(); k++)
+		{			
 			l.clear();
-			for (unsigned j = 0; j < ndfa.GetAlphabetLenght(); j++)
+			for (Nfa::TSymbol j = 0; j<nfa.GetAlphabetLenght(); j++)
 			{
-				if (!ndfa.GetSuccesors(i, j).Test(k)) continue;
+				auto s = nfa.GetSuccesors(i, j);
+				if (!_TestBit(s, k)) continue;
 				l.push_back(lexical_cast<string>(j));
 			}
 			if (l.size() > 0)
@@ -72,76 +83,69 @@ void NdfaDotExporter::Export(const Ndfa& ndfa, std::string filename)
 vector<string> _splitBySpaces( string line );
 
 
-void NdfaDotExporter::ExportDestinoPlainText(const Ndfa& ndfa, std::string filename)
+void NfaDotExporter::ExportDestinoPlainText(const Nfa& nfa, std::string filename)
 {
 	ofstream out(filename);	
+	map<unsigned, unsigned> active;
 
 	out << "# Alfabeto" << endl;	
-	out << ndfa.GetAlphabetLenght() << endl;
+	out << nfa.GetAlphabetLenght() << endl;
 	
 	out << "# Numero de estados" << endl;
 	int states = 0;
-	for(auto it=ndfa.GetActiveStates().GetBitSetIterator(); !it.IsEnd(); it.Next())
+	for (unsigned i=0; i<nfa.GetMaxStates(); i++)
 	{
 		// contar estados activos
-		states++;
+		if(HasAnyTransition(nfa, i)) 
+		{		
+			active[states] = i;
+			states++;
+		}
 	}
 	out << states << endl;
 
-	out << "# Estados iniciales" << endl;
-	states = 0;
-	for(auto it=ndfa.GetActiveStates().GetBitSetIterator(); !it.IsEnd(); it.Next())
+	out << "# Estados iniciales" << endl;	
+	for (auto i=active.begin(); i!=active.end(); i++)
 	{
-		auto bitN = it.GetBit(); // de los activos cuales son iniciales?
-		if(ndfa.GetInitial().Test(bitN)) 
+		if(nfa.IsInitial(i->second)) 
 		{
-			out << states << " ";
-		}
-		states++;
+			out << i->first << " ";
+		}				
 	}	
 	out << endl;
 
-	out << "# Estados finales" << endl;
-	states = 0;
-	for(auto it=ndfa.GetActiveStates().GetBitSetIterator(); !it.IsEnd(); it.Next())
+	out << "# Estados finales" << endl;	
+	for (auto i=active.begin(); i!=active.end(); i++)
 	{
-		auto bitN = it.GetBit(); // de los activos cuales son finales?
-		if(ndfa.GetFinal().Test(bitN)) 
+		if(nfa.IsFinal(i->second))
 		{
-			out << states << " ";
-		}
-		states++;
+			out << i->first << " ";
+		}		
 	}	
 	out << endl;
 
 	out << "# Descripcion de las transiciones" << endl;
 	ostringstream buffer;
-	int transitions = 0;
-	int st1=0;
-	for (auto it1=ndfa.GetActiveStates().GetBitSetIterator(); !it1.IsEnd(); it1.Next())
+	int transitions = 0;	
+	for (auto i=active.begin(); i!=active.end(); i++)
 	{ 
-		unsigned i = it1.GetBit();
-		int st2=0;
-		for (auto it2=ndfa.GetActiveStates().GetBitSetIterator(); !it2.IsEnd(); it2.Next())
-		{
-			unsigned k = it2.GetBit();
-			for (unsigned j = 0; j < ndfa.GetAlphabetLenght(); j++)
+		for (auto k=active.begin(); k!=active.end(); k++)
+		{			
+			for (unsigned j = 0; j<nfa.GetAlphabetLenght(); j++)
 			{
 				// estado(st1) con estado(st2) con simbolo(j)
-				if (!ndfa.GetSuccesors(i, j).Test(k)) continue;
-				buffer << st1 << " " << st2 << " " << j << endl;
+				if(!nfa.ExistTransition(i->second, k->second, j)) continue;				
+				buffer << i->first << " " << k->first << " " << j << endl;
 				transitions++;
-			}
-			st2++;
-		}
-		st1++;
+			}			
+		}		
 	}
 	out << transitions << endl;
 	out << buffer.str();
 	out.close();
 }
 
-Ndfa NdfaDotExporter::ImportDestinoPlainText(std::string filename)
+Nfa NfaDotExporter::ImportDestinoPlainText(std::string filename)
 {
 	ifstream file(filename);
 	if(!file.is_open())
@@ -152,7 +156,7 @@ Ndfa NdfaDotExporter::ImportDestinoPlainText(std::string filename)
 	int transitionCount;
 	int currentTransition;
 	string line;
-	Ndfa ndfa(1);
+	Nfa ndfa(1);
 
 	// maquina de estados de lectura de archivo
 	enum { header_alphabet, header_states, header_initial, header_final, header_transitions_count, body_transitions } state;
@@ -171,9 +175,9 @@ Ndfa NdfaDotExporter::ImportDestinoPlainText(std::string filename)
 		{
 			vector<string> splits;
 			int alpha = lexical_cast<int>(line);
-			ndfa = Ndfa(alpha);
+			ndfa = Nfa(alpha);
 			state = header_states;
-		} 
+		}
 		else if(state == header_states)
 		{
 			stateCount = lexical_cast<int>(line);

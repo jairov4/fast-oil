@@ -4,14 +4,14 @@
 using namespace std;
 
 ///////////////////UTIL
-void _SetBit(Nfa::TTokenVector vec, unsigned bit)
+bool _SetBit(Nfa::TTokenVector vec, unsigned bit)
 {
-	_bittestandset64((__int64*)vec, bit);
+	return _bittestandset64((__int64*)vec, bit);
 }
 
-void _ClearBit(Nfa::TTokenVector vec, unsigned bit)
+bool _ClearBit(Nfa::TTokenVector vec, unsigned bit)
 {
-	_bittestandreset64((__int64*)vec, bit);
+	return _bittestandreset64((__int64*)vec, bit);
 }
 
 bool _TestBit(const Nfa::TTokenVector vec, unsigned bit)
@@ -200,8 +200,8 @@ void Nfa::Merge( unsigned ns1, unsigned ns2 )
 				_ClearBit(&fetch, idx);
 				unsigned state = idx + bitToken;
 				auto pred = _GetPred(state, sym);				
-				_SetBit(pred, ns1); // estado n ahora va a s1
-				_ClearBit(pred, ns2); // estado n iba a s2
+				_SetBit(pred, ns1); // estado n ahora viene de s1
+				_ClearBit(pred, ns2); // estado n venia de s2
 			}
 			bitToken += BitsPerToken;
 		}
@@ -211,24 +211,41 @@ void Nfa::Merge( unsigned ns1, unsigned ns2 )
 /** Activa un estado para que pueda ser usado
 */
 void Nfa::ActivateState( unsigned st )
-{	
+{
+	if(st >= MaxStates)
+	{
+		ResizeFor(MaxStates * 2);
+	}
+
 	// si no estaba activo toca activarlo
-	if(!ActiveStates.Set(st))
+	if(!_SetBit(ActiveStates, st))	
 	{
 		auto idxBegin = _GetIndex(st, 0);
-		auto idxEnd = idxBegin + AlphabetLenght;
-		if(idxEnd > Succesors.size())
-		{
-			Succesors.resize(idxEnd);
-			Predecessors.resize(idxEnd);
-		} 
+		auto idxEnd = _GetIndex(st+1, 0);
 		// si ya hay espacio solo los limpia
-		for (auto it = idxBegin; it != idxEnd; it++)
-		{
-			Succesors[it].ClearAll();
-			Predecessors[it].ClearAll();
-		}		
+		memset(Succesors + idxBegin, 0, GetVectorSize()*AlphabetLenght);
+		memset(Predecessors + idxBegin, 0, GetVectorSize()*AlphabetLenght);		
 	}
+}
+
+void Nfa::ResizeFor(unsigned states)
+{
+	// Layout: Active, Initial, Final, Predecessors, Successors
+	// Token allocation count:
+	// Active, Initial, Final => Tokens
+	// Predecessors, Successors => Tokens*MaxStates*AlphabetLenght
+	// Tokens*3 + Tokens*MaxStates*AlphabetLenght*2
+	Tokens = states / BitsPerToken + 1;
+	MaxStates = Tokens * BitsPerToken;
+	auto n = Tokens*3 + Tokens*MaxStates*AlphabetLenght*2;
+
+	AllMemory = ReallocTokens(AllMemory, n);
+
+	ActiveStates = &AllMemory[Tokens*0];
+	Initial = &AllMemory[Tokens*1];
+	Final = &AllMemory[Tokens*2];
+	Predecessors = &AllMemory[Tokens*3 + Tokens*MaxStates*AlphabetLenght*0];
+	Succesors = &AllMemory[Tokens*3 + Tokens*MaxStates*AlphabetLenght*1];
 }
 
 /** Añade la informacion necesaria a la estructura de datos para que el automata
@@ -262,6 +279,27 @@ void Nfa::SetFinal( unsigned st )
 	// activar el estado
 	ActivateState(st);
 	_SetBit(Final, st);
+}
+
+/** Indica si un estado es inicial
+*/
+bool Nfa::IsInitial(unsigned st) const
+{
+	return _TestBit(GetInitial(), st);
+}
+	
+/** Indica si un estado es final
+*/
+bool Nfa::IsFinal(unsigned st) const
+{
+	return _TestBit(GetFinal(), st);
+}
+
+/** Indica si existe una transicion entre el estado src y el estado dest a traves del simbolo sym
+*/
+bool Nfa::ExistTransition(unsigned src, unsigned dest, Nfa::TSymbol sym) const
+{
+	return _TestBit(GetSuccesors(src, sym), dest);
 }
 
 /** Obtiene un arreglo de bits que representa los estados que son predecesores de un
