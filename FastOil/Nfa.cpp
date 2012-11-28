@@ -130,24 +130,13 @@ void Nfa::OrTokenVector(Nfa::TTokenVector dest, const Nfa::TTokenVector v) const
 // TODO: cambiar usando AVX-256 (haria 4 por instruccion)
 bool Nfa::AnyAndTokenVector(const Nfa::TTokenVector dest, const Nfa::TTokenVector v) const
 {
-	__m256i rd;
-	__m256i rs;
-	for(unsigned i=0; i<Tokens; i+=4)
-	{
-		rs = _mm256_loadu_si256((__m256i*)&v[i]);
-		rd = _mm256_loadu_si256((__m256i*)&dest[i]);		
-		if(_mm256_testz_si256(rd, rs)) return true;		
-	}
-	
-	/* NON AVX
-	for(unsigned i=0; i<Tokens; i+=4)
+	for(unsigned i=0; i<Tokens; i++)
 	{
 		if(dest[i] & v[i]) 
 		{
 			return true;
 		}
 	}	
-	*/
 	return false;
 }
 
@@ -268,14 +257,6 @@ void Nfa::ActivateState( unsigned st )
 		ResizeFor(MaxStates * 2);
 	}
 
-	auto tokenIndex = st / BitsPerToken;
-	while(ActiveStates.size() <= tokenIndex)
-	{
-		auto newSize = ActiveStates.size() * 2;
-		Initial.resize(newSize, 0);
-		Final.resize(newSize, 0);
-		ActiveStates.resize(newSize, 0);
-	}
 	// si no estaba activo toca activarlo
 	if(!_SetBit(ActiveStates, st))	
 	{
