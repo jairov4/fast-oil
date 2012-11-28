@@ -268,6 +268,14 @@ void Nfa::ActivateState( unsigned st )
 		ResizeFor(MaxStates * 2);
 	}
 
+	auto tokenIndex = st / BitsPerToken;
+	while(ActiveStates.size() <= tokenIndex)
+	{
+		auto newSize = ActiveStates.size() * 2;
+		Initial.resize(newSize, 0);
+		Final.resize(newSize, 0);
+		ActiveStates.resize(newSize, 0);
+	}
 	// si no estaba activo toca activarlo
 	if(!_SetBit(ActiveStates, st))	
 	{
