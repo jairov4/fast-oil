@@ -118,25 +118,34 @@ void Nfa::ClearTokenVector(Nfa::TTokenVector dest) const
 	_ClearAllBits(dest, Tokens);
 }
 
-// TODO: cambiar usando AVX-256 (haria 4 por instruccion)
 void Nfa::OrTokenVector(Nfa::TTokenVector dest, const Nfa::TTokenVector v) const
 {
+	// AVX256 version needs Core i7		 
+	assert(Tokens % 4 == 0); // tokens debe ser multiplo de 4 para mantener precision
+	for(unsigned i=0; i<Tokens; i+=4)
+	{
+		__m256 rs = _mm256_loadu_ps((const float*)&v[i]);
+		__m256 rd = _mm256_loadu_ps((const float*)&dest[i]);		
+		rd = _mm256_or_ps(rs, rd);
+		_mm256_storeu_ps((float*)&dest[i], rd);
+	}
+	/* NON AVX
 	for(unsigned i=0; i<Tokens; i++)
 	{
 		dest[i] |= v[i];
 	}
+	*/
 }
 
-// TODO: cambiar usando AVX-256 (haria 4 por instruccion)
 bool Nfa::AnyAndTokenVector(const Nfa::TTokenVector dest, const Nfa::TTokenVector v) const
 {
-	__m256i rd;
-	__m256i rs;
+	// AVX256 version needs Core i7		 
+	assert(Tokens % 4 == 0); // tokens debe ser multiplo de 4 para mantener precision
 	for(unsigned i=0; i<Tokens; i+=4)
 	{
-		rs = _mm256_loadu_si256((__m256i*)&v[i]);
-		rd = _mm256_loadu_si256((__m256i*)&dest[i]);		
-		if(_mm256_testz_si256(rd, rs)) return true;		
+		__m256i rs = _mm256_loadu_si256((__m256i*)&v[i]);
+		__m256i rd = _mm256_loadu_si256((__m256i*)&dest[i]);
+		if(_mm256_testz_si256(rd, rs)) return true;
 	}
 	
 	/* NON AVX
