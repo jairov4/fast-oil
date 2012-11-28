@@ -49,12 +49,16 @@ Nfa::TTokenVector ReallocTokens(Nfa::TTokenVector v, unsigned tokens)
 Nfa::Nfa(unsigned alpha)
 	: 	
 	AlphabetLenght(alpha),
-	ActiveStates(), 
-	Initial(),
-	Final(),
-	Succesors(), 
-	Predecessors()
+	ActiveStates(NULL), 
+	Tokens(0),
+	MaxStates(0),
+	Initial(NULL),
+	Final(NULL),
+	Succesors(NULL), 
+	Predecessors(NULL),
+	AllMemory(NULL)
 {	
+	ResizeFor(256);
 }
 
 Nfa::~Nfa(void)
@@ -76,13 +80,12 @@ void Nfa::CloneTokenVector(Nfa::TTokenVector dest, const Nfa::TTokenVector sourc
 	memcpy(dest, source, GetVectorSize());
 }
 
-// TODO: cambiar usando AVX
 void Nfa::ClearTokenVector(Nfa::TTokenVector dest) const
 {
 	_ClearAllBits(dest, Tokens);
 }
 
-// TODO: cambiar usando AVX (haria 4 por instruccion)
+// TODO: cambiar usando AVX-256 (haria 4 por instruccion)
 void Nfa::OrTokenVector(Nfa::TTokenVector dest, const Nfa::TTokenVector v) const
 {
 	for(unsigned i=0; i<Tokens; i++)
@@ -91,7 +94,7 @@ void Nfa::OrTokenVector(Nfa::TTokenVector dest, const Nfa::TTokenVector v) const
 	}
 }
 
-// TODO: cambiar usando AVX (haria 4 por instruccion)
+// TODO: cambiar usando AVX-256 (haria 4 por instruccion)
 bool Nfa::AnyAndTokenVector(const Nfa::TTokenVector dest, const Nfa::TTokenVector v) const
 {
 	for(unsigned i=0; i<Tokens; i++)
@@ -111,10 +114,10 @@ bool Nfa::IsMatch(Nfa::TSampleConstIter begin, Nfa::TSampleConstIter end) const
 	TTokenVector next = CreateTokenVector();
 	TTokenVector current = CreateTokenVector();
 	CloneTokenVector(current, Initial);
-	unsigned sym;	
+		
 	for (auto i=begin; i!=end; i++)
 	{
-		sym = *i;
+		unsigned sym = *i;
 		ClearTokenVector(next);
 		bool any = false;		
 		unsigned BitIdx = 0;
@@ -128,7 +131,7 @@ bool Nfa::IsMatch(Nfa::TSampleConstIter begin, Nfa::TSampleConstIter end) const
 				unsigned bit = BitIdx + idx;
 				any = true;
 				auto s = GetSuccesors(bit, sym);
-				OrTokenVector(next, s);				
+				OrTokenVector(next, s);
 			}
 			BitIdx += BitsPerToken;
 		}		
@@ -246,6 +249,8 @@ void Nfa::ResizeFor(unsigned states)
 	Final = &AllMemory[Tokens*2];
 	Predecessors = &AllMemory[Tokens*3 + Tokens*MaxStates*AlphabetLenght*0];
 	Succesors = &AllMemory[Tokens*3 + Tokens*MaxStates*AlphabetLenght*1];
+
+	// TODO: Falta acomodar los datos que ya estaban en sus nuevas locaciones
 }
 
 /** Añade la informacion necesaria a la estructura de datos para que el automata
@@ -305,7 +310,7 @@ bool Nfa::ExistTransition(unsigned src, unsigned dest, Nfa::TSymbol sym) const
 /** Obtiene un arreglo de bits que representa los estados que son predecesores de un
     estado determinado por un simbolo determinado
 */
-Nfa::TTokenVector Nfa::_GetPred( unsigned state, TSymbol sym )
+Nfa::TTokenVector Nfa::_GetPred( unsigned state, TSymbol sym ) const
 {
 	return &Predecessors[_GetIndex(state, sym)];
 }
@@ -313,7 +318,7 @@ Nfa::TTokenVector Nfa::_GetPred( unsigned state, TSymbol sym )
 /** Obtiene un arreglo de bits que representa los estados que son sucesores de un
     estado determinado por un simbolo determinado
 */
-Nfa::TTokenVector Nfa::_GetSuc( unsigned state, TSymbol sym )
+Nfa::TTokenVector Nfa::_GetSuc( unsigned state, TSymbol sym ) const
 {
 	return &Succesors[_GetIndex(state, sym)];
 }
@@ -360,6 +365,28 @@ const Nfa::TTokenVector Nfa::GetActiveStates() const
 unsigned Nfa::GetAlphabetLenght() const
 {
 	return AlphabetLenght;
+}
+
+unsigned Nfa::GetMaxStates() const
+{
+	return MaxStates;
+}
+
+unsigned Nfa::GetInactiveState() const
+{
+	unsigned bit = 0;
+	for(unsigned token=0; token<Tokens; token++)
+	{		
+		auto fetch = ~ActiveStates[token];
+		unsigned long idx;
+		if(_BitScanForward64(&idx, fetch))
+		{
+			unsigned n = idx + bit;
+			return n;
+		}
+		bit += BitsPerToken;
+	}
+	return bit;
 }
 
 /** Obtiene el indice para ser usado con los vectores de predecesores y sucesores
