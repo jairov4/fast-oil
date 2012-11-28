@@ -14,7 +14,7 @@ public:
 	typedef TSample::const_iterator TSampleConstIter;
 	typedef TToken* TTokenVector;
 
-	const unsigned BitsPerToken = sizeof(TToken) * 8;
+	static const unsigned BitsPerToken = sizeof(TToken) * 8;
 
 private:	
 	TTokenVector ActiveStates;
@@ -28,18 +28,21 @@ private:
 	TTokenVector AllMemory;
 
 	unsigned AlphabetLenght;
-	unsigned Tokens;	
+	unsigned Tokens;
+	unsigned MaxStates;
 	
 	unsigned _GetIndex(unsigned st, TSymbol sym) const;
 	TTokenVector _GetPred(unsigned state, TSymbol sym);
 	TTokenVector _GetSuc(unsigned state, TSymbol sym);
 
 	void ActivateState(unsigned st);
+	void ResizeFor(unsigned states);
 
 	// Token management
 	TTokenVector CreateTokenVector() const;
 	void CloneTokenVector(TTokenVector dest, const TTokenVector source) const;
 	size_t GetVectorSize() const;
+
 	// bit operators
 	void ClearTokenVector(TTokenVector dest) const;
 	void OrTokenVector(TTokenVector dest, const TTokenVector v) const;
@@ -53,6 +56,10 @@ public:
 	void SetInitial(unsigned st);
 	void SetFinal(unsigned st);
 
+	bool IsInitial(unsigned st) const;
+	bool IsFinal(unsigned st) const;
+	bool ExistTransition(unsigned src, unsigned dest, TSymbol sym) const;
+
 	bool IsMatch(TSampleConstIter begin, TSampleConstIter end) const;
 	bool IsMatch(const TSample& sample) const;
 	void Merge(unsigned ns1, unsigned ns2);		
@@ -62,6 +69,10 @@ public:
 	const TTokenVector GetInitial() const;
 	const TTokenVector GetFinal() const;
 	const TTokenVector GetActiveStates() const;
+		
+	unsigned GetMaxStates() const;
 	
 	unsigned GetAlphabetLenght() const;	
 };
+
+bool _TestBit(const Nfa::TTokenVector vec, unsigned bit);

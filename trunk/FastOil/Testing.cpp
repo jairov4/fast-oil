@@ -32,18 +32,18 @@ namespace Testing {
 		nfa.SetTransition(0, 0, 1);
 		nfa.SetInitial(0);
 		nfa.SetFinal(1);
-		NdfaDotExporter::Export(nfa, "test2.dot");
+		NfaDotExporter::Export(nfa, "test2.dot");
 	}
 
 	void Test3()
 	{
-		Nfa ndfa(2);		
-		ndfa.SetTransition(0, 1, 0);
-		ndfa.SetTransition(0, 0, 1);
-		ndfa.SetInitial(0);
-		ndfa.SetFinal(1);
-		ndfa.Merge(0, 1);
-		NdfaDotExporter::Export(ndfa, "test3.dot");
+		Nfa nfa(2);		
+		nfa.SetTransition(0, 1, 0);
+		nfa.SetTransition(0, 0, 1);
+		nfa.SetInitial(0);
+		nfa.SetFinal(1);
+		nfa.Merge(0, 1);
+		NfaDotExporter::Export(nfa, "test3.dot");
 	}
 
 		
@@ -111,10 +111,10 @@ namespace Testing {
 		trainer.SkipSearchBestMerge = true;
 		trainer.DoNotUseRandomSort = true;
 		trainer.ShowPossibleMerges = true;
-		auto ndfa = trainer.Train(pos, neg, alpha);
-		NdfaDotExporter::Export(*ndfa, "Test7.dot");
-		NdfaDotExporter::ExportDestinoPlainText(*ndfa, "Test7.auto");
-		delete ndfa;
+		auto nfa = trainer.Train(pos, neg, alpha);
+		NfaDotExporter::Export(*nfa, "Test7.dot");
+		NfaDotExporter::ExportDestinoPlainText(*nfa, "Test7.auto");
+		delete nfa;
 	}
 
 	void AllTesting()
