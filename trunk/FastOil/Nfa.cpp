@@ -25,8 +25,7 @@ void _ClearAllBits(Nfa::TTokenVector vec, unsigned tokens)
 }
 
 void _OrAndClearSecondBit(Nfa::TTokenVector vec, unsigned b1, unsigned b2)
-{
-	_bittest64(vec, b1);
+{	
 	auto c2 = _bittestandreset64(vec, b2);
 	if(c2) _bittestandset64(vec, b1);	
 }
@@ -61,8 +60,42 @@ Nfa::Nfa(unsigned alpha)
 	ResizeFor(256);
 }
 
+Nfa::Nfa(const Nfa& nfa)
+	:	
+	ActiveStates(NULL), 
+	Tokens(0),
+	MaxStates(0),
+	Initial(NULL),
+	Final(NULL),
+	Succesors(NULL), 
+	Predecessors(NULL),
+	AllMemory(NULL)
+{
+	CloneFrom(nfa);
+}
+
 Nfa::~Nfa(void)
 {
+	free(AllMemory);
+}
+
+void Nfa::Clear()
+{
+	auto totalTokens = Tokens*3 + Tokens*MaxStates*AlphabetLenght*2;
+	auto totalSize = totalTokens * sizeof(TToken);
+	memset(AllMemory, 0, totalSize);
+}
+
+void Nfa::CloneFrom(const Nfa& nfa)
+{
+	AlphabetLenght = nfa.AlphabetLenght;
+	ResizeFor(nfa.MaxStates);
+	auto totalTokens = Tokens*3 + Tokens*MaxStates*AlphabetLenght*2;
+	auto totalSize = totalTokens * sizeof(TToken);
+	memcpy(AllMemory, nfa.AllMemory, totalSize);
+	assert(Tokens == nfa.Tokens);
+	assert(MaxStates == nfa.MaxStates);
+	assert(AlphabetLenght == nfa.AlphabetLenght);	
 }
 
 size_t Nfa::GetVectorSize() const
@@ -137,9 +170,13 @@ bool Nfa::IsMatch(Nfa::TSampleConstIter begin, Nfa::TSampleConstIter end) const
 		}		
 		if(!any) return false;
 		std::swap(next, current);
-	}
+	}	
 	
 	auto match = AnyAndTokenVector(current, Final);
+	
+	free(next);
+	free(current);
+
 	return match;
 }
 
@@ -238,7 +275,7 @@ void Nfa::ResizeFor(unsigned states)
 	// Active, Initial, Final => Tokens
 	// Predecessors, Successors => Tokens*MaxStates*AlphabetLenght
 	// Tokens*3 + Tokens*MaxStates*AlphabetLenght*2
-	Tokens = states / BitsPerToken + 1;
+	Tokens = (states - 1) / BitsPerToken + 1;
 	MaxStates = Tokens * BitsPerToken;
 	auto n = Tokens*3 + Tokens*MaxStates*AlphabetLenght*2;
 
@@ -392,8 +429,8 @@ unsigned Nfa::GetInactiveState() const
 /** Obtiene el indice para ser usado con los vectores de predecesores y sucesores
 */
 unsigned Nfa::_GetIndex( unsigned st, TSymbol sym ) const
-{	
+{
 	assert(sym < AlphabetLenght);
-	return st*AlphabetLenght+sym;
+	return (st*AlphabetLenght+sym)*Tokens;
 }
 

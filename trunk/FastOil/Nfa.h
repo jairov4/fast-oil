@@ -68,7 +68,11 @@ private:
 	
 public:
 	Nfa(unsigned alpha);
+	Nfa(const Nfa& c);
 	~Nfa(void);
+
+	void Clear();
+	void CloneFrom(const Nfa& c);
 
 	void SetTransition(unsigned src, unsigned dest, TSymbol sym);
 	void SetInitial(unsigned st);
@@ -88,9 +92,8 @@ public:
 	const TTokenVector GetFinal() const;
 	const TTokenVector GetActiveStates() const;
 		
-	unsigned GetMaxStates() const;
-	unsigned GetInactiveState() const;
-	
+	unsigned GetInactiveState() const;	
+	unsigned GetMaxStates() const;	
 	unsigned GetAlphabetLenght() const;	
 };
 
