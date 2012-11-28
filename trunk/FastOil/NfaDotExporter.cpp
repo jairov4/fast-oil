@@ -22,7 +22,7 @@ bool HasAnyTransition(const Nfa& nfa, unsigned state)
 {	
 	for (Nfa::TSymbol sym=0; sym<nfa.GetAlphabetLenght(); sym++)
 	{
-		HasAnyTransition(nfa, state, sym);	
+		if(HasAnyTransition(nfa, state, sym)) return true;
 	}
 	return false;
 }
