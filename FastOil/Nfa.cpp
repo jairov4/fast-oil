@@ -130,13 +130,24 @@ void Nfa::OrTokenVector(Nfa::TTokenVector dest, const Nfa::TTokenVector v) const
 // TODO: cambiar usando AVX-256 (haria 4 por instruccion)
 bool Nfa::AnyAndTokenVector(const Nfa::TTokenVector dest, const Nfa::TTokenVector v) const
 {
-	for(unsigned i=0; i<Tokens; i++)
+	__m256i rd;
+	__m256i rs;
+	for(unsigned i=0; i<Tokens; i+=4)
+	{
+		rs = _mm256_loadu_si256((__m256i*)&v[i]);
+		rd = _mm256_loadu_si256((__m256i*)&dest[i]);		
+		if(_mm256_testz_si256(rd, rs)) return true;		
+	}
+	
+	/* NON AVX
+	for(unsigned i=0; i<Tokens; i+=4)
 	{
 		if(dest[i] & v[i]) 
 		{
 			return true;
 		}
 	}	
+	*/
 	return false;
 }
 
@@ -438,4 +449,3 @@ unsigned Nfa::_GetIndex( unsigned st, TSymbol sym ) const
 	assert(sym < AlphabetLenght);
 	return (st*AlphabetLenght+sym)*Tokens;
 }
-
