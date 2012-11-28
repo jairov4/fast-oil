@@ -337,6 +337,11 @@ bool Nfa::IsFinal(unsigned st) const
 	return _TestBit(GetFinal(), st);
 }
 
+bool Nfa::IsActiveState(unsigned st) const
+{
+	return _TestBit(ActiveStates, st);
+}
+
 /** Indica si existe una transicion entre el estado src y el estado dest a traves del simbolo sym
 */
 bool Nfa::ExistTransition(unsigned src, unsigned dest, Nfa::TSymbol sym) const

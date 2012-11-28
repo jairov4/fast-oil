@@ -80,6 +80,7 @@ public:
 
 	bool IsInitial(unsigned st) const;
 	bool IsFinal(unsigned st) const;
+	bool IsActiveState(unsigned st) const;
 	bool ExistTransition(unsigned src, unsigned dest, TSymbol sym) const;
 
 	bool IsMatch(TSampleConstIter begin, TSampleConstIter end) const;
