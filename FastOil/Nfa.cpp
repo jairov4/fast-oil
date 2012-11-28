@@ -145,7 +145,7 @@ bool Nfa::AnyAndTokenVector(const Nfa::TTokenVector dest, const Nfa::TTokenVecto
 	{
 		__m256i rs = _mm256_loadu_si256((__m256i*)&v[i]);
 		__m256i rd = _mm256_loadu_si256((__m256i*)&dest[i]);
-		if(_mm256_testz_si256(rd, rs)) return true;
+		if(!_mm256_testz_si256(rd, rs)) return true;
 	}
 	
 	/* NON AVX
