@@ -84,6 +84,10 @@ Nfa* OilTrainer::Train(TSamples& positiveSamples, TSamples& negativeSamples, uns
 	testNfa = new Nfa(alpha);
 	bestNfa = new Nfa(alpha);
 	
+	nfa->Clear();
+	testNfa->Clear();
+	bestNfa->Clear();
+	
 	// Asegura orden lexicografico
 	sort(positiveSamples.begin(), positiveSamples.end(), _sampleComparer);
 	sort(negativeSamples.begin(), negativeSamples.end(), _sampleComparer);
@@ -135,7 +139,7 @@ void OilTrainer::CoreceMatch(TSamples::const_iterator currentPosSampleIterator)
 	auto lastStateId = nfa->GetInactiveState();
 	nfa->SetInitial(lastStateId);
 	randomIds.push_back(lastStateId);
-		
+
 	// inserta estados en los espacios inactivos	
 	for(auto symIter=currentPosSample.cbegin(); symIter!=currentPosSample.cend(); symIter++)
 	{
@@ -174,7 +178,7 @@ void OilTrainer::DoAllMergesPossible(TSamples::const_iterator currentPosSampleIt
 		for (unsigned j=0; j<i; j++)
 		{
 			int s2 = randomIds[j];
-			*testNfa = *nfa; // copiamos en el de prueba
+			testNfa->CloneFrom(*nfa); // copiamos en el de prueba			
 			testNfa->Merge(s2, s1); // hacemos la mezcla
 
 			bool anyNegMatch = _anyMatch(*negSamples, *testNfa);
