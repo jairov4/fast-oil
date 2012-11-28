@@ -13,7 +13,14 @@ bool HasAnyTransition(const Nfa& nfa, unsigned state, Nfa::TSymbol sym)
 {	
 	for (unsigned i=0; i<nfa.GetMaxStates(); i++)
 	{
-		if(nfa.ExistTransition(state, i, sym)) return true;
+		if(!nfa.IsActiveState(i)) 
+		{
+			continue;
+		}
+		if(nfa.ExistTransition(state, i, sym)) 
+		{
+			return true;
+		}
 	}
 	return false;
 }
@@ -36,42 +43,52 @@ void NfaDotExporter::Export(const Nfa& nfa, std::string filename)
 	out << "  node [shape=box width=0.1 height=0.1 fontname=Arial]" << endl;
 	out << "  edge [fontname=Arial]" << endl;
 
-	out << "/* Estados */" << endl;		
+	map<unsigned, unsigned> active;
 	for (unsigned i=0; i<nfa.GetMaxStates(); i++)
+	{
+		// contar estados activos
+		if(HasAnyTransition(nfa, i)) 
+		{		
+			active[active.size()] = i;
+		}
+	}
+
+	out << "/* Estados */" << endl;		
+	for (auto i=active.begin(); i!=active.end(); i++)
 	{	
-		auto isInitial = nfa.IsInitial(i);
-		auto isFinal = nfa.IsFinal(i);
-		// omite los que no sirven
-		if(!isInitial && !isFinal && !HasAnyTransition(nfa, i)) continue;
+		auto isInitial = nfa.IsInitial(i->second);
+		auto isFinal = nfa.IsFinal(i->second);
+		
 		string fmt;
 		if (isInitial && !isFinal) fmt = initialStyle;
 		else if (!isInitial && isFinal) fmt = finalStyle;
 		else if (isInitial && isFinal) fmt = initialFinalStyle;
 		
-		out << " s" << i << " [label=\"" << i << "\" " << fmt << "] " 
+		out << " s" << i->first << " [label=\"" << i->first << "\" " << fmt << "] " 
 			<< "/* I:"<< isInitial
 			<< " F:" << isFinal			
+			<< " ORG:" << i->second
 			<< " */" << endl;
 	}
 
 	list<string> l;
 	out << "/* Transiciones */" << endl;
-	for (unsigned i=0; i<nfa.GetMaxStates(); i++)
+	for (auto i=active.begin(); i!=active.end(); i++)
 	{		
-		for (unsigned k=0; k<nfa.GetMaxStates(); k++)
+		for (auto k=active.begin(); k!=active.end(); k++)
 		{			
 			l.clear();
 			for (Nfa::TSymbol j = 0; j<nfa.GetAlphabetLenght(); j++)
 			{
-				auto s = nfa.GetSuccesors(i, j);
-				if (!_TestBit(s, k)) continue;
+				auto s = nfa.GetSuccesors(i->second, j);
+				if (!_TestBit(s, k->second)) continue;
 				l.push_back(lexical_cast<string>(j));
 			}
 			if (l.size() > 0)
 			{
 				string str;
 				auto syms = join(l, ","); // une por comas 2,3,7,22,....
-				out << "  s" << i << " -> s" << k << " [label=\"" << syms << "\"]" << endl;
+				out << "  s" << i->first << " -> s" << k->first << " [label=\"" << syms << "\"]" << endl;
 			}
 		}
 	}
@@ -91,18 +108,16 @@ void NfaDotExporter::ExportDestinoPlainText(const Nfa& nfa, std::string filename
 	out << "# Alfabeto" << endl;	
 	out << nfa.GetAlphabetLenght() << endl;
 	
-	out << "# Numero de estados" << endl;
-	int states = 0;
+	out << "# Numero de estados" << endl;	
 	for (unsigned i=0; i<nfa.GetMaxStates(); i++)
 	{
 		// contar estados activos
 		if(HasAnyTransition(nfa, i)) 
 		{		
-			active[states] = i;
-			states++;
+			active[active.size()] = i;			
 		}
 	}
-	out << states << endl;
+	out << active.size() << endl;
 
 	out << "# Estados iniciales" << endl;	
 	for (auto i=active.begin(); i!=active.end(); i++)
@@ -131,7 +146,7 @@ void NfaDotExporter::ExportDestinoPlainText(const Nfa& nfa, std::string filename
 	{ 
 		for (auto k=active.begin(); k!=active.end(); k++)
 		{			
-			for (unsigned j = 0; j<nfa.GetAlphabetLenght(); j++)
+			for (Nfa::TSymbol j = 0; j<nfa.GetAlphabetLenght(); j++)
 			{
 				// estado(st1) con estado(st2) con simbolo(j)
 				if(!nfa.ExistTransition(i->second, k->second, j)) continue;				
