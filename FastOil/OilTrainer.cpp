@@ -131,31 +131,18 @@ void OilTrainer::CoreceMatch(TSamples::const_iterator currentPosSampleIterator)
 	// en el vector de identificadores aleatorios
 	statesAddedBeginInRandom = (unsigned)randomIds.size();	
 	
-	// ultimo estado añadido
-	int lastStateId = -1;
-
-	auto inactive = nfa->GetActiveStates();
-	// negar los activos nos indica cuales son los inactivos
-	inactive.Not();
-
-	// indica en que simbolo de la muestra vamos
-	auto symIter = currentPosSample.cbegin();
-
-	// inserta estados en los espacios inactivos
-	for(auto inactiveStateIter = inactive.GetBitSetIterator(); symIter != currentPosSample.cend(); inactiveStateIter.Next())
+	// El primer estado es inicial
+	auto lastStateId = nfa->GetInactiveState();
+	nfa->SetInitial(lastStateId);
+	randomIds.push_back(lastStateId);
+		
+	// inserta estados en los espacios inactivos	
+	for(auto symIter=currentPosSample.cbegin(); symIter!=currentPosSample.cend(); symIter++)
 	{
-		auto inactiveStateId = inactiveStateIter.GetBit();
-		if(lastStateId == -1) // indica que es el primer estado
-		{
-			// El primer estado es inicial
-			nfa->SetInitial(inactiveStateId);
-		} else {			
-			nfa->SetTransition(lastStateId, inactiveStateId, *symIter);			
-			// avanza al siguiente simbolo
-			symIter++;
-		}
+		auto inactiveStateId = nfa->GetInactiveState();
+		nfa->SetTransition(lastStateId, inactiveStateId, *symIter);	
 		lastStateId = inactiveStateId;
-		randomIds.push_back(lastStateId);				
+		randomIds.push_back(lastStateId);
 	}
 	nfa->SetFinal(lastStateId);
 

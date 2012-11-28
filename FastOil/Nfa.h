@@ -16,26 +16,44 @@ public:
 
 	static const unsigned BitsPerToken = sizeof(TToken) * 8;
 
-private:	
+private:
+
 	TTokenVector ActiveStates;
 	TTokenVector Initial;
 	TTokenVector Final;
 	TTokenVector Predecessors;
 	TTokenVector Succesors;
 
-	// Pack data
+	// Packed data
 	// ActiveStates, Initial, Final, Pred, Suc
 	TTokenVector AllMemory;
 
+	// Cantidad de simbolos en el alfabeto. Se inicializa solo durante el constructor
 	unsigned AlphabetLenght;
+
+	// Indica la cantidad de tokens alojados actualmente
+	// Se actualiza cuando se redimensiona la cantidad de estados soportados
 	unsigned Tokens;
+
+	// Indica la cantidad de estados maxima actual, se actualiza cuando se redimensiona
+	// la cantidad de estados soportados
 	unsigned MaxStates;
 	
-	unsigned _GetIndex(unsigned st, TSymbol sym) const;
-	TTokenVector _GetPred(unsigned state, TSymbol sym);
-	TTokenVector _GetSuc(unsigned state, TSymbol sym);
 
+
+	// Obtiene el indice de los tokens para sucesores y predecesores
+	unsigned _GetIndex(unsigned st, TSymbol sym) const;
+
+	// Obtiene la referencia modificable a los tokens para predecesores
+	TTokenVector _GetPred(unsigned state, TSymbol sym) const;
+
+	// Obtiene la referencia modificable a los tokens para sucesores
+	TTokenVector _GetSuc(unsigned state, TSymbol sym) const;
+
+	// Activa un estado
 	void ActivateState(unsigned st);
+
+	// Redimensiona la cantidad de estados soportada
 	void ResizeFor(unsigned states);
 
 	// Token management
@@ -71,8 +89,15 @@ public:
 	const TTokenVector GetActiveStates() const;
 		
 	unsigned GetMaxStates() const;
+	unsigned GetInactiveState() const;
 	
 	unsigned GetAlphabetLenght() const;	
 };
 
+bool _SetBit(Nfa::TTokenVector vec, unsigned bit);
+bool _ClearBit(Nfa::TTokenVector vec, unsigned bit);
 bool _TestBit(const Nfa::TTokenVector vec, unsigned bit);
+void _ClearAllBits(Nfa::TTokenVector vec, unsigned tokens);
+void _OrAndClearSecondBit(Nfa::TTokenVector vec, unsigned b1, unsigned b2);
+Nfa::TTokenVector AllocTokens(unsigned tokens);
+Nfa::TTokenVector ReallocTokens(Nfa::TTokenVector v, unsigned tokens);
