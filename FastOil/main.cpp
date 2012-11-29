@@ -159,7 +159,7 @@ void TestMultiple(string samplesFilename, string modelsManifestFilename, string 
 			cout << "Modelo \"" << *i << "\" cargado." << endl;
 		}
 		cout << "Cargados " << models.size() << " modelos" << endl;
-	}	
+	}
 	
 	cout << "Cargando archivo de muestras." << endl;
 	SamplesReader reader;
@@ -254,8 +254,8 @@ void ParseTrainOptions(vector<string>::const_iterator optBegin, vector<string>::
 
 int main(int argc, char* argv[])
 {
-//	try
-//	{
+	try
+	{
 		if(argc < 2)
 		{
 			cout << "Para obtener ayuda ejecute \"FastOil help\"" << endl;
@@ -363,12 +363,12 @@ int main(int argc, char* argv[])
 			cout << "Opcion invalida: '" << arguments[1] << "'" << endl;
 			return 1;
 		}
-	//} 
-	//catch (const exception& e) 
-	//{
-	//	string msg = e.what();
-	//	cout << "Unexpected error: " << msg << endl;
-	//	throw e;
-	//}
+	} 
+	catch (const exception& e) 
+	{
+		string msg = e.what();
+		cout << "Unexpected error: " << msg << endl;
+		throw e;
+	}
 	return 0;
 }

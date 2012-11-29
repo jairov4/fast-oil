@@ -24,7 +24,7 @@ void NfaDotExporter::Export(const Nfa& nfa, std::string filename)
 		// contar estados activos
 		if(nfa.IsActiveState(i))
 		{
-			active[active.size()] = i;
+			active[(unsigned)active.size()] = i;
 		}		
 	}
 
@@ -72,8 +72,7 @@ void NfaDotExporter::Export(const Nfa& nfa, std::string filename)
 }
 
 
-vector<string> _splitBySpaces( string line );
-
+vector<string> _splitBySpaces(const string& line);
 
 void NfaDotExporter::ExportDestinoPlainText(const Nfa& nfa, std::string filename)
 {
@@ -89,7 +88,7 @@ void NfaDotExporter::ExportDestinoPlainText(const Nfa& nfa, std::string filename
 		// contar estados activos
 		if(nfa.IsActiveState(i))
 		{
-			active[active.size()] = i;
+			active[(unsigned)active.size()] = i;
 		}		
 	}
 	out << active.size() << endl;

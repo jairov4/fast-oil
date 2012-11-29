@@ -22,7 +22,7 @@ SamplesReader::~SamplesReader(void)
 {
 }
 
-vector<string> _splitBySpaces( string line )
+vector<string> _splitBySpaces(const string& line )
 {
 	vector<string> splits;
 	// divide la cadena por los espacios

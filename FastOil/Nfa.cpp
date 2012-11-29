@@ -81,7 +81,7 @@ Nfa::~Nfa(void)
 
 void Nfa::Clear()
 {
-	auto totalTokens = Tokens*3 + Tokens*MaxStates*AlphabetLenght*2;
+	auto totalTokens = Tokens*3 /*+ Tokens*MaxStates*AlphabetLenght*2*/;
 	auto totalSize = totalTokens * sizeof(TToken);
 	memset(AllMemory, 0, totalSize);
 }
