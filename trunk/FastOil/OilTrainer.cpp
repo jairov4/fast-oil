@@ -101,8 +101,8 @@ Nfa* OilTrainer::Train(TSamples& positiveSamples, TSamples& negativeSamples, uns
 		auto acceptPos = nfa->IsMatch(*currentPosSampleIter);
 		if(!acceptPos)
 		{
-			CoreceMatch(currentPosSampleIter);
-			DoAllMergesPossible(currentPosSampleIter);
+			CoreceMatch(currentPosSampleIter);			
+			DoAllMergesPossible(currentPosSampleIter);			
 		}
 		currentPosSample++;
 

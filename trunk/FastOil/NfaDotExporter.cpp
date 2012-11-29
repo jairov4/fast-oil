@@ -9,31 +9,6 @@ const string initialStyle = "style=\"filled\"";
 const string finalStyle = "style=\"bold,dashed\"";
 const string initialFinalStyle = "style=\"filled,bold,dashed\"";
 
-bool HasAnyTransition(const Nfa& nfa, unsigned state, Nfa::TSymbol sym)
-{	
-	for (unsigned i=0; i<nfa.GetMaxStates(); i++)
-	{
-		if(!nfa.IsActiveState(i)) 
-		{
-			continue;
-		}
-		if(nfa.ExistTransition(state, i, sym)) 
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
-bool HasAnyTransition(const Nfa& nfa, unsigned state)
-{	
-	for (Nfa::TSymbol sym=0; sym<nfa.GetAlphabetLenght(); sym++)
-	{
-		if(HasAnyTransition(nfa, state, sym)) return true;
-	}
-	return false;
-}
-
 void NfaDotExporter::Export(const Nfa& nfa, std::string filename)
 {
 	ofstream out(filename);
@@ -47,10 +22,10 @@ void NfaDotExporter::Export(const Nfa& nfa, std::string filename)
 	for (unsigned i=0; i<nfa.GetMaxStates(); i++)
 	{
 		// contar estados activos
-		if(HasAnyTransition(nfa, i)) 
-		{		
+		if(nfa.IsActiveState(i))
+		{
 			active[active.size()] = i;
-		}
+		}		
 	}
 
 	out << "/* Estados */" << endl;		
@@ -112,10 +87,10 @@ void NfaDotExporter::ExportDestinoPlainText(const Nfa& nfa, std::string filename
 	for (unsigned i=0; i<nfa.GetMaxStates(); i++)
 	{
 		// contar estados activos
-		if(HasAnyTransition(nfa, i)) 
-		{		
-			active[active.size()] = i;			
-		}
+		if(nfa.IsActiveState(i))
+		{
+			active[active.size()] = i;
+		}		
 	}
 	out << active.size() << endl;
 

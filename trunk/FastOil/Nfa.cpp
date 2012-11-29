@@ -277,25 +277,30 @@ void Nfa::ActivateState( unsigned st )
 		ResizeFor(MaxStates * 2);
 	}
 
-	// si no estaba activo toca activarlo
+	// si no estaba activo se realiza algo de limpieza
 	if(!_SetBit(ActiveStates, st))	
 	{
 		auto idxBegin = _GetIndex(st, 0);
 		auto idxEnd = _GetIndex(st+1, 0);
-		// si ya hay espacio solo los limpia
+		// si ya hay espacio solo los limpia.
+		// No se inicializan Initial y Final ya que por diseño esas banderas se limpian
+		// cuando el estado se desactiva en Merge()
 		memset(Succesors + idxBegin, 0, GetVectorSize()*AlphabetLenght);
-		memset(Predecessors + idxBegin, 0, GetVectorSize()*AlphabetLenght);		
+		memset(Predecessors + idxBegin, 0, GetVectorSize()*AlphabetLenght);
 	}
 }
 
 void Nfa::ResizeFor(unsigned states)
 {
+	// asegura que la cantidad de estados sea multiplo de 256 para aplicar instrucciones AVX
+	states = ((states - 1) / 256 + 1) * 256; 
+
 	// Layout: Active, Initial, Final, Predecessors, Successors
 	// Token allocation count:
 	// Active, Initial, Final => Tokens
 	// Predecessors, Successors => Tokens*MaxStates*AlphabetLenght
-	// Tokens*3 + Tokens*MaxStates*AlphabetLenght*2
-	Tokens = (states - 1) / BitsPerToken + 1;
+	// Tokens*3 + Tokens*MaxStates*AlphabetLenght*2			
+	Tokens = (states - 1) / BitsPerToken + 1;	
 	MaxStates = Tokens * BitsPerToken;
 	auto n = Tokens*3 + Tokens*MaxStates*AlphabetLenght*2;
 
