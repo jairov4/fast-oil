@@ -50,6 +50,7 @@ Nfa::Nfa(unsigned alpha)
 	AlphabetLenght(alpha),
 	ActiveStates(NULL), 
 	Tokens(0),
+	TotalTokens(0),
 	MaxStates(0),
 	Initial(NULL),
 	Final(NULL),
@@ -58,12 +59,14 @@ Nfa::Nfa(unsigned alpha)
 	AllMemory(NULL)
 {	
 	ResizeFor(256);
+	Clear();
 }
 
 Nfa::Nfa(const Nfa& nfa)
 	:	
 	ActiveStates(NULL), 
 	Tokens(0),
+	TotalTokens(0),
 	MaxStates(0),
 	Initial(NULL),
 	Final(NULL),
@@ -80,9 +83,8 @@ Nfa::~Nfa(void)
 }
 
 void Nfa::Clear()
-{
-	auto totalTokens = Tokens*3 /*+ Tokens*MaxStates*AlphabetLenght*2*/;
-	auto totalSize = totalTokens * sizeof(TToken);
+{	
+	auto totalSize = GetVectorSize()*3;
 	memset(AllMemory, 0, totalSize);
 }
 
@@ -90,12 +92,12 @@ void Nfa::CloneFrom(const Nfa& nfa)
 {
 	AlphabetLenght = nfa.AlphabetLenght;
 	ResizeFor(nfa.MaxStates);
-	auto totalTokens = Tokens*3 + Tokens*MaxStates*AlphabetLenght*2;
-	auto totalSize = totalTokens * sizeof(TToken);
+	TotalTokens = nfa.TotalTokens;
+	auto totalSize = TotalTokens * sizeof(TToken);
 	memcpy(AllMemory, nfa.AllMemory, totalSize);
 	assert(Tokens == nfa.Tokens);
 	assert(MaxStates == nfa.MaxStates);
-	assert(AlphabetLenght == nfa.AlphabetLenght);	
+	assert(AlphabetLenght == nfa.AlphabetLenght);
 }
 
 size_t Nfa::GetVectorSize() const
@@ -122,7 +124,8 @@ void Nfa::OrTokenVector(Nfa::TTokenVector dest, const Nfa::TTokenVector v) const
 {
 	// AVX256 version needs Core i7		 
 	assert(Tokens % 4 == 0); // tokens debe ser multiplo de 4 para mantener precision
-	for(unsigned i=0; i<Tokens; i+=4)
+	const int incr = 256 / BitsPerToken; // AVX use 256-bit registers
+	for(unsigned i=0; i<Tokens; i+=incr)
 	{
 		__m256 rs = _mm256_loadu_ps((const float*)&v[i]);
 		__m256 rd = _mm256_loadu_ps((const float*)&dest[i]);		
@@ -141,7 +144,8 @@ bool Nfa::AnyAndTokenVector(const Nfa::TTokenVector dest, const Nfa::TTokenVecto
 {
 	// AVX256 version needs Core i7		 
 	assert(Tokens % 4 == 0); // tokens debe ser multiplo de 4 para mantener precision
-	for(unsigned i=0; i<Tokens; i+=4)
+	const int incr = 256 / BitsPerToken; // AVX use 256-bit registers
+	for(unsigned i=0; i<Tokens; i+=incr)
 	{
 		__m256i rs = _mm256_loadu_si256((__m256i*)&v[i]);
 		__m256i rd = _mm256_loadu_si256((__m256i*)&dest[i]);
@@ -290,10 +294,40 @@ void Nfa::ActivateState( unsigned st )
 	}
 }
 
+void Nfa::_MoveActiveTokenVectors(TTokenVector dest, const TTokenVector source, unsigned beforeTokens, unsigned beforeVectorSize)
+{		
+	unsigned bitToken = 0;
+	for(unsigned it=0; it<beforeTokens; it++)
+	{
+		TToken fetch = ActiveStates[beforeTokens-it-1];
+		unsigned long idx = 0;
+		
+		while(_BitScanReverse64(&idx, fetch))
+		{
+			_ClearBit(&fetch, idx);
+			unsigned state = idx + bitToken;
+			
+			for(TSymbol sym=0; sym<AlphabetLenght; sym++)
+			{
+				auto symr = AlphabetLenght-sym-1;
+				auto n_old = _GetIndex(state, sym, beforeTokens);
+				auto n_new = _GetIndex(state, sym, Tokens);
+				memcpy(dest+n_new, source+n_old, beforeVectorSize);
+			}
+		}
+		bitToken+=BitsPerToken;
+	}
+}
+
 void Nfa::ResizeFor(unsigned states)
 {
+	unsigned beforeTokens = Tokens;
+	unsigned beforeMaxStates = MaxStates;
+	unsigned beforeVectorSize = GetVectorSize();
+
+	assert(BitsPerToken <= 256); // Condicion necesaria para la compatibilidad con AVX
 	// asegura que la cantidad de estados sea multiplo de 256 para aplicar instrucciones AVX
-	states = ((states - 1) / 256 + 1) * 256; 
+	states = ((states - 1) / 256 + 1) * 256; 	
 
 	// Layout: Active, Initial, Final, Predecessors, Successors
 	// Token allocation count:
@@ -302,17 +336,29 @@ void Nfa::ResizeFor(unsigned states)
 	// Tokens*3 + Tokens*MaxStates*AlphabetLenght*2			
 	Tokens = (states - 1) / BitsPerToken + 1;	
 	MaxStates = Tokens * BitsPerToken;
-	auto n = Tokens*3 + Tokens*MaxStates*AlphabetLenght*2;
+	TotalTokens = Tokens*3 + Tokens*MaxStates*AlphabetLenght*2;
+	
+	AllMemory = ReallocTokens(AllMemory, TotalTokens);
 
-	AllMemory = ReallocTokens(AllMemory, n);
-
+	auto beforeActiveStates = ActiveStates;
 	ActiveStates = &AllMemory[Tokens*0];
+
+	auto beforeInitial = Initial;
 	Initial = &AllMemory[Tokens*1];
+
+	auto beforeFinal = Final;
 	Final = &AllMemory[Tokens*2];
+
+	auto beforePredecessors = Predecessors;
 	Predecessors = &AllMemory[Tokens*3 + Tokens*MaxStates*AlphabetLenght*0];
+	
+	auto beforeSuccesors = Succesors;
 	Succesors = &AllMemory[Tokens*3 + Tokens*MaxStates*AlphabetLenght*1];
 
-	// TODO: Falta acomodar los datos que ya estaban en sus nuevas locaciones
+	_MoveActiveTokenVectors(Succesors, beforeSuccesors, beforeTokens, beforeVectorSize);
+	_MoveActiveTokenVectors(Predecessors, beforePredecessors, beforeTokens, beforeVectorSize);
+	memcpy(Final, beforeFinal, beforeVectorSize);
+	memcpy(Initial, beforeInitial, beforeVectorSize);
 }
 
 /** Añade la informacion necesaria a la estructura de datos para que el automata
@@ -459,6 +505,12 @@ unsigned Nfa::GetInactiveState() const
 /** Obtiene el indice para ser usado con los vectores de predecesores y sucesores
 */
 unsigned Nfa::_GetIndex( unsigned st, TSymbol sym ) const
+{
+	assert(sym < AlphabetLenght);
+	return _GetIndex(st, sym, Tokens);
+}
+
+unsigned Nfa::_GetIndex( unsigned st, TSymbol sym, unsigned Tokens) const
 {
 	assert(sym < AlphabetLenght);
 	return (st*AlphabetLenght+sym)*Tokens;
