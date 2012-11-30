@@ -254,6 +254,7 @@ void ParseTrainOptions(vector<string>::const_iterator optBegin, vector<string>::
 
 int main(int argc, char* argv[])
 {
+	Testing::AllTesting(); return 0;
 	try
 	{
 		if(argc < 2)

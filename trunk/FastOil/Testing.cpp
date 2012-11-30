@@ -11,7 +11,7 @@ namespace Testing {
 
 	void Test1()
 	{
-		Nfa nfa(5);		
+		Nfa nfa(5);
 		nfa.SetTransition(0, 1, 3);
 		nfa.SetInitial(0);
 		nfa.SetFinal(1);
@@ -137,6 +137,7 @@ namespace Testing {
 			i++;
 			cout << "Test passed " << i << " (elapsed: " << (fin-ini) << ")" << endl;
 		});
+		cout << "Testing finished (press ENTER to quit)..." << endl;
 		getc(stdin);
 	}
 }

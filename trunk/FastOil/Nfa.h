@@ -35,14 +35,18 @@ private:
 	// Se actualiza cuando se redimensiona la cantidad de estados soportados
 	unsigned Tokens;
 
+	// Indica la cantidad total de tokens alojados
+	unsigned TotalTokens;
+
 	// Indica la cantidad de estados maxima actual, se actualiza cuando se redimensiona
 	// la cantidad de estados soportados
 	unsigned MaxStates;
 	
-
-
 	// Obtiene el indice de los tokens para sucesores y predecesores
 	unsigned _GetIndex(unsigned st, TSymbol sym) const;
+	unsigned _GetIndex(unsigned st, TSymbol sym, unsigned Tokens) const;
+
+	void _MoveActiveTokenVectors(TTokenVector dest, const TTokenVector source, unsigned beforeTokens, unsigned beforeVectorSize);
 
 	// Obtiene la referencia modificable a los tokens para predecesores
 	TTokenVector _GetPred(unsigned state, TSymbol sym) const;
@@ -95,7 +99,7 @@ public:
 		
 	unsigned GetInactiveState() const;	
 	unsigned GetMaxStates() const;	
-	unsigned GetAlphabetLenght() const;	
+	unsigned GetAlphabetLenght() const;		
 };
 
 bool _SetBit(Nfa::TTokenVector vec, unsigned bit);
