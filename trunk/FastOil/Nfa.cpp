@@ -121,9 +121,9 @@ void Nfa::ClearTokenVector(Nfa::TTokenVector dest) const
 }
 
 void Nfa::OrTokenVector(Nfa::TTokenVector dest, const Nfa::TTokenVector v) const
-{
-	// AVX256 version needs Core i7		 
-	assert(Tokens % 4 == 0); // tokens debe ser multiplo de 4 para mantener precision
+{	
+#ifndef _NOT_USE_AVX256	
+	assert(Tokens * BitsPerToken % 256 == 0); // tokens debe ser multiplo de 256
 	const int incr = 256 / BitsPerToken; // AVX use 256-bit registers
 	for(unsigned i=0; i<Tokens; i+=incr)
 	{
@@ -132,18 +132,19 @@ void Nfa::OrTokenVector(Nfa::TTokenVector dest, const Nfa::TTokenVector v) const
 		rd = _mm256_or_ps(rs, rd);
 		_mm256_storeu_ps((float*)&dest[i], rd);
 	}
-	/* NON AVX
+#else
+	/* NON AVX */
 	for(unsigned i=0; i<Tokens; i++)
 	{
 		dest[i] |= v[i];
 	}
-	*/
+#endif
 }
 
 bool Nfa::AnyAndTokenVector(const Nfa::TTokenVector dest, const Nfa::TTokenVector v) const
-{
-	// AVX256 version needs Core i7		 
-	assert(Tokens % 4 == 0); // tokens debe ser multiplo de 4 para mantener precision
+{	
+#ifndef _NOT_USE_AVX256	
+	assert(Tokens * BitsPerToken % 256 == 0); // tokens debe ser multiplo de 256
 	const int incr = 256 / BitsPerToken; // AVX use 256-bit registers
 	for(unsigned i=0; i<Tokens; i+=incr)
 	{
@@ -151,16 +152,16 @@ bool Nfa::AnyAndTokenVector(const Nfa::TTokenVector dest, const Nfa::TTokenVecto
 		__m256i rd = _mm256_loadu_si256((__m256i*)&dest[i]);
 		if(!_mm256_testz_si256(rd, rs)) return true;
 	}
-	
-	/* NON AVX
-	for(unsigned i=0; i<Tokens; i+=4)
+#else
+	/* NON AVX */
+	for(unsigned i=0; i<Tokens; i++)
 	{
 		if(dest[i] & v[i]) 
 		{
 			return true;
 		}
 	}	
-	*/
+#endif
 	return false;
 }
 
@@ -325,9 +326,11 @@ void Nfa::ResizeFor(unsigned states)
 	unsigned beforeMaxStates = MaxStates;
 	unsigned beforeVectorSize = GetVectorSize();
 
+#ifndef _NOT_USE_AVX256
 	assert(BitsPerToken <= 256); // Condicion necesaria para la compatibilidad con AVX
 	// asegura que la cantidad de estados sea multiplo de 256 para aplicar instrucciones AVX
-	states = ((states - 1) / 256 + 1) * 256; 	
+	states = ((states - 1) / 256 + 1) * 256;
+#endif
 
 	// Layout: Active, Initial, Final, Predecessors, Successors
 	// Token allocation count:
