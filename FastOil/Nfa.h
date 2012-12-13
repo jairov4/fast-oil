@@ -46,7 +46,7 @@ private:
 	unsigned _GetIndex(unsigned st, TSymbol sym) const;
 	unsigned _GetIndex(unsigned st, TSymbol sym, unsigned Tokens) const;
 
-	void _MoveActiveTokenVectors(TTokenVector dest, const TTokenVector source, unsigned beforeTokens, unsigned beforeVectorSize);
+	void _MoveActiveTokenVectors(TTokenVector dest, const TTokenVector source, unsigned beforeTokens, size_t beforeVectorSize);
 
 	// Obtiene la referencia modificable a los tokens para predecesores
 	TTokenVector _GetPred(unsigned state, TSymbol sym) const;

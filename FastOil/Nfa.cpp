@@ -295,7 +295,7 @@ void Nfa::ActivateState( unsigned st )
 	}
 }
 
-void Nfa::_MoveActiveTokenVectors(TTokenVector dest, const TTokenVector source, unsigned beforeTokens, unsigned beforeVectorSize)
+void Nfa::_MoveActiveTokenVectors(TTokenVector dest, const TTokenVector source, unsigned beforeTokens, size_t beforeVectorSize)
 {		
 	unsigned bitToken = 0;
 	for(unsigned it=0; it<beforeTokens; it++)
@@ -324,7 +324,7 @@ void Nfa::ResizeFor(unsigned states)
 {
 	unsigned beforeTokens = Tokens;
 	unsigned beforeMaxStates = MaxStates;
-	unsigned beforeVectorSize = GetVectorSize();
+	size_t beforeVectorSize = GetVectorSize();
 
 #ifndef _NOT_USE_AVX256
 	assert(BitsPerToken <= 256); // Condicion necesaria para la compatibilidad con AVX
