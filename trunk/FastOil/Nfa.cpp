@@ -6,17 +6,17 @@ using namespace std;
 ///////////////////UTIL
 bool _SetBit(Nfa::TTokenVector vec, unsigned bit)
 {
-	return _bittestandset64((__int64*)vec, bit);
+	return (bool)_bittestandset64((__int64*)vec, bit);
 }
 
 bool _ClearBit(Nfa::TTokenVector vec, unsigned bit)
 {
-	return _bittestandreset64((__int64*)vec, bit);
+	return (bool)_bittestandreset64((__int64*)vec, bit);
 }
 
 bool _TestBit(const Nfa::TTokenVector vec, unsigned bit)
 {
-	return _bittest64((__int64*)vec, bit);
+	return (bool)_bittest64((__int64*)vec, bit);
 }
 
 void _ClearAllBits(Nfa::TTokenVector vec, unsigned tokens)
