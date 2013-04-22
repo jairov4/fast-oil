@@ -40,7 +40,7 @@ void SamplesReader::ReadSamples( string filename, TSamples& pos, TSamples& neg, 
 	ifstream file(filename);
 	if(!file.is_open()) 
 	{
-		throw exception("El archivo de muestras no pudo ser abierto");
+		throw runtime_error("El archivo de muestras no pudo ser abierto");
 	}
 
 	string line;
@@ -57,7 +57,7 @@ void SamplesReader::ReadSamples( string filename, TSamples& pos, TSamples& neg, 
 			auto splits = _splitBySpaces(line);
 			if(splits.size() != 2)
 			{
-				throw exception("Formato de archivo de secuencias invalido, cabecera mal formada");
+				throw runtime_error("Formato de archivo de secuencias invalido, cabecera mal formada");
 			}			
 			// int cnt = lexical_cast<int>(splits[0]); // non-used
 			*alphabetLength = lexical_cast<int>(splits[1]);
@@ -72,14 +72,14 @@ void SamplesReader::ReadSamples( string filename, TSamples& pos, TSamples& neg, 
 			auto splits = _splitBySpaces(line);
 			if(splits.size() < 2)
 			{
-				throw exception("Formato de archivo de secuencias invalido, linea incompleta");
+				throw runtime_error("Formato de archivo de secuencias invalido, linea incompleta");
 			}
 			// determina si es muestra positiva
 			bool isPositive = lexical_cast<int>(splits[0]) == 1;
-			int sampleLenght = lexical_cast<int>(splits[1]);
+			unsigned sampleLenght = lexical_cast<unsigned>(splits[1]);
 			if(splits.size() != sampleLenght + 2)
 			{
-				throw exception("Formato de archivo de secuencias invalido, dimensiones invalidas");
+				throw runtime_error("Formato de archivo de secuencias invalido, dimensiones invalidas");
 			}
 
 			// Lee la nueva muestra, convierte cada simbolo
@@ -90,7 +90,7 @@ void SamplesReader::ReadSamples( string filename, TSamples& pos, TSamples& neg, 
 				auto val = lexical_cast<TSymbol>(*it);
 				if(val >= *alphabetLength)
 				{
-					throw exception("Formato de archivo de secuencias invalido, longitud de alfabeto incorrecta");
+					throw runtime_error("Formato de archivo de secuencias invalido, longitud de alfabeto incorrecta");
 				}
 				newSample.push_back(val);
 			}
