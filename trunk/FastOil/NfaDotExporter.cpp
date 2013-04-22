@@ -139,7 +139,7 @@ Nfa NfaDotExporter::ImportDestinoPlainText(std::string filename)
 	ifstream file(filename);
 	if(!file.is_open())
 	{
-		throw std::exception("No fue posible abrir el modelo");
+		throw runtime_error("No fue posible abrir el modelo");
 	}
 	int stateCount;
 	int transitionCount;
@@ -198,19 +198,19 @@ Nfa NfaDotExporter::ImportDestinoPlainText(std::string filename)
 			auto sym = lexical_cast<unsigned>(splits[2]);			
 			if(src >= stateCount) 
 			{
-				throw exception("Numero de estado fuente invalido");
+				throw runtime_error("Numero de estado fuente invalido");
 			}
 			if(dst >= stateCount) 
 			{
-				throw exception("Numero de estado destino invalido");
+				throw runtime_error("Numero de estado destino invalido");
 			}
 			if(sym >= ndfa.GetAlphabetLenght()) 
 			{
-				throw exception("Codigo de simbolo invalido");
+				throw runtime_error("Codigo de simbolo invalido");
 			}
 			if(currentTransition >= transitionCount)
 			{
-				throw exception("Cantidad de transiciones incorrecta");
+				throw runtime_error("Cantidad de transiciones incorrecta");
 			}
 			ndfa.SetTransition(src, dst, sym);
 			currentTransition++;			

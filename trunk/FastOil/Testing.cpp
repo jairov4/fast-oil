@@ -66,7 +66,7 @@ namespace Testing {
 	{
 		OilTrainer trainer;
 		const int alpha = 4;
-		const int len = 4;
+		
 		OilTrainer::TSymbol pos[] = {
 			0, 1, 2, 3,
 			0, 0, 0, 1,

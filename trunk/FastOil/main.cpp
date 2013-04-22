@@ -39,7 +39,7 @@ void TrainMultiple(string samplesFilename, string modelsManifestFilename, int co
 	ofstream manifest(modelsManifestFilename);
 	if(!manifest.is_open())
 	{
-		throw exception("No fue posible abrir el archivo de manifiesto");
+		throw runtime_error("No fue posible abrir el archivo de manifiesto");
 	}
 	manifest << "# Manifiesto de clasificador" << endl;
 	manifest << "# Los siguientes archivos de modelos referenciados" << endl;
@@ -94,7 +94,7 @@ void TestSingle(string samplesFilename, string modelFilename, string reportFilen
 	ofstream report(reportFilename);
 	if(!report.is_open())
 	{
-		throw std::exception("Error abriendo el archivo de reporte");
+		throw runtime_error("Error abriendo el archivo de reporte");
 		return;
 	}
 
@@ -126,7 +126,7 @@ void ReadManifest(string manifestFilename, vector<string>& models)
 	ifstream manifest(manifestFilename);
 	if(!manifest.is_open())
 	{
-		throw std::exception("Error with manifest file");
+		throw runtime_error("Error with manifest file");
 		return;
 	}
 	string line;
@@ -170,7 +170,7 @@ void TestMultiple(string samplesFilename, string modelsManifestFilename, string 
 	ofstream report(reportFilename);
 	if(!report.is_open())
 	{
-		throw std::exception("Error abriendo el archivo de reporte");		
+		throw runtime_error("Error abriendo el archivo de reporte");		
 	}
 	
 	cout << "Evaluando..." << endl;
@@ -181,7 +181,7 @@ void TestMultiple(string samplesFilename, string modelsManifestFilename, string 
 	report << "Muestras Positivas" << endl;
 	for(size_t i = 0; i < pos.size(); i++)
 	{
-		int answerCounter = 0;
+		unsigned answerCounter = 0;
 		for(auto j=models.begin(); j != models.end(); j++)
 		{
 			auto rj = TestSample(report, i, *j, pos[i]);
@@ -194,7 +194,7 @@ void TestMultiple(string samplesFilename, string modelsManifestFilename, string 
 	report << "Muestras Negativas" << endl;
 	for(size_t i=0; i<neg.size(); i++)
 	{
-		int answerCounter = 0;
+		unsigned answerCounter = 0;
 		for(auto j=models.begin(); j != models.end(); j++)
 		{
 			auto r = TestSample(report, i, *j, neg[i]);		
@@ -254,7 +254,7 @@ void ParseTrainOptions(vector<string>::const_iterator optBegin, vector<string>::
 
 int main(int argc, char* argv[])
 {
-	Testing::AllTesting(); return 0;
+	//Testing::AllTesting(); return 0;
 	try
 	{
 		if(argc < 2)
@@ -361,7 +361,12 @@ int main(int argc, char* argv[])
 		} 
 		else 
 		{
-			cout << "Opcion invalida: '" << arguments[1] << "'" << endl;
+			if(arguments.size() > 0) 
+			{ 
+				cout << "Opcion invalida: '" << arguments[0] << "'" << endl;
+			} else {
+				cout << "Opcion invalida" << endl;
+			}
 			return 1;
 		}
 	} 
