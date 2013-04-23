@@ -317,7 +317,10 @@ int main(int argc, char* argv[])
 				<< "\tdeterminismo de los resultados de experimentacion" << endl
 				<< endl
 				<< "\tLa opcion -v muestra la mezcla de estados realizada" << endl
-				<< endl
+				<< endl << endl
+#ifndef _NOT_USE_AVX256
+				<< "\tEsta compilacion requiere un procesador compatible con AVX-256" << endl
+#endif
 				;
 		} 
 		else if(trainSingle || trainMultiple)
