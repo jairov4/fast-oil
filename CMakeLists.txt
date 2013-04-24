@@ -2,16 +2,19 @@ cmake_minimum_required(VERSION 2.8)
 set(FASTOIL_VERSION_MAJOR 1)
 set(FASTOIL_VERSION_MINOR 3)
 
-project(FastOil)
+project(FastOil CXX)
 
 option(USE_AVX256 "Use AVX-256 Instructions" ON)
-
-enable_language(CXX)
 
 configure_file(src/config.h.in config.h)
 
 find_package(Boost 1.40 REQUIRED)
-include_directories("${Boost_INCLUDE_DIR}" "${PROJECT_BINARY_DIR}")
+find_package(OpenCL REQUIRED)
+
+include_directories(
+	"${Boost_INCLUDE_DIR}"
+	"${OPENCL_INCLUDE_DIRS}"
+	"${PROJECT_BINARY_DIR}")
 
 add_executable(FastOil 
 	"src/main.cpp" 
@@ -21,7 +24,9 @@ add_executable(FastOil
 	"src/SamplesReader.cpp" 
 	"src/Testing.cpp")
 
-install (TARGETS FastOil DESTINATION bin)
+target_link_libraries(FastOil "${OPENCL_LIBRARIES}")
+
+install(TARGETS FastOil DESTINATION bin)
 
 export(PACKAGE FastOil)
 
