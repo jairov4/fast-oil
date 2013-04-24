@@ -4,40 +4,47 @@
 using namespace std;
 
 ///////////////////UTIL
-bool _SetBit(Nfa::TTokenVector vec, unsigned bit)
+template<class TSymbol, class TToken, Nfa<TToken, TSymbol> TNfa>
+static bool _SetBit(TNfa::TTokenVector vec, unsigned bit)
 {
 	return (bool)_bittestandset64((__int64*)vec, bit);
 }
 
-bool _ClearBit(Nfa::TTokenVector vec, unsigned bit)
+template<class TSymbol, class TToken, Nfa<TToken, TSymbol> TNfa>
+static bool _ClearBit(TNfa::TTokenVector vec, unsigned bit)
 {
 	return (bool)_bittestandreset64((__int64*)vec, bit);
 }
 
-bool _TestBit(const Nfa::TTokenVector vec, unsigned bit)
+template<class TSymbol, class TToken, Nfa<TToken, TSymbol> TNfa>
+static bool _TestBit(const TNfa::TTokenVector vec, unsigned bit)
 {
 	return (bool)_bittest64((__int64*)vec, bit);
 }
 
-void _ClearAllBits(Nfa::TTokenVector vec, unsigned tokens)
+template<class TSymbol, class TToken, Nfa<TToken, TSymbol> TNfa>
+static void _ClearAllBits(TNfa::TTokenVector vec, unsigned tokens)
 {
 	memset(vec, 0, tokens * sizeof(Nfa::TToken));	
 }
 
-void _OrAndClearSecondBit(Nfa::TTokenVector vec, unsigned b1, unsigned b2)
+template<class TSymbol, class TToken, Nfa<TToken, TSymbol> TNfa>
+static void _OrAndClearSecondBit(TNfa::TTokenVector vec, unsigned b1, unsigned b2)
 {	
 	auto c2 = _bittestandreset64(vec, b2);
 	if(c2) _bittestandset64(vec, b1);	
 }
 
-Nfa::TTokenVector AllocTokens(unsigned tokens)
+template<class TSymbol, class TToken, Nfa<TToken, TSymbol> TNfa>
+static TNfa::TTokenVector AllocTokens(unsigned tokens)
 {
-	return (Nfa::TTokenVector)malloc(tokens * sizeof(Nfa::TToken));
+	return (TNfa::TTokenVector)malloc(tokens * sizeof(TToken));
 }
 
-Nfa::TTokenVector ReallocTokens(Nfa::TTokenVector v, unsigned tokens)
+template<class TSymbol, class TToken, Nfa<TToken, TSymbol> TNfa>
+static TNfa::TTokenVector ReallocTokens(TNfa::TTokenVector v, unsigned tokens)
 {
-	return (Nfa::TTokenVector)realloc(v, tokens * sizeof(Nfa::TToken));
+	return (TNfa::TTokenVector)realloc(v, tokens * sizeof(TToken));
 }
 ///////////////////!UTIL
 
@@ -45,6 +52,7 @@ Nfa::TTokenVector ReallocTokens(Nfa::TTokenVector v, unsigned tokens)
     La cantidad de estados del automata es variable pero la longitud del alfabeto debe ser
 		especificada y no podra ser cambiada.
 */
+template<class TSymbol, class TToken>
 Nfa::Nfa(unsigned alpha)
 	: 	
 	AlphabetLenght(alpha),
@@ -62,6 +70,7 @@ Nfa::Nfa(unsigned alpha)
 	Clear();
 }
 
+template<class TSymbol, class TToken>
 Nfa::Nfa(const Nfa& nfa)
 	:	
 	ActiveStates(NULL), 
@@ -77,17 +86,20 @@ Nfa::Nfa(const Nfa& nfa)
 	CloneFrom(nfa);
 }
 
+template<class TSymbol, class TToken>
 Nfa::~Nfa(void)
 {
 	free(AllMemory);
 }
 
+template<class TSymbol, class TToken>
 void Nfa::Clear()
 {	
 	auto totalSize = GetVectorSize()*3;
 	memset(AllMemory, 0, totalSize);
 }
 
+template<class TSymbol, class TToken>
 void Nfa::CloneFrom(const Nfa& nfa)
 {
 	AlphabetLenght = nfa.AlphabetLenght;
@@ -100,26 +112,31 @@ void Nfa::CloneFrom(const Nfa& nfa)
 	assert(AlphabetLenght == nfa.AlphabetLenght);
 }
 
+template<class TSymbol, class TToken>
 size_t Nfa::GetVectorSize() const
 {
 	return Tokens * sizeof(Nfa::TToken);
 }
 
+template<class TSymbol, class TToken>
 Nfa::TTokenVector Nfa::CreateTokenVector() const
 {
 	return AllocTokens(Tokens);
 }
 
+template<class TSymbol, class TToken>
 void Nfa::CloneTokenVector(Nfa::TTokenVector dest, const Nfa::TTokenVector source) const
 {
 	memcpy(dest, source, GetVectorSize());
 }
 
+template<class TSymbol, class TToken>
 void Nfa::ClearTokenVector(Nfa::TTokenVector dest) const
 {
 	_ClearAllBits(dest, Tokens);
 }
 
+template<class TSymbol, class TToken>
 void Nfa::OrTokenVector(Nfa::TTokenVector dest, const Nfa::TTokenVector v) const
 {	
 #ifndef _NOT_USE_AVX256	
@@ -141,6 +158,7 @@ void Nfa::OrTokenVector(Nfa::TTokenVector dest, const Nfa::TTokenVector v) const
 #endif
 }
 
+template<class TSymbol, class TToken>
 bool Nfa::AnyAndTokenVector(const Nfa::TTokenVector dest, const Nfa::TTokenVector v) const
 {	
 #ifndef _NOT_USE_AVX256	
@@ -167,6 +185,7 @@ bool Nfa::AnyAndTokenVector(const Nfa::TTokenVector dest, const Nfa::TTokenVecto
 
 /** Indica si una muestra es reconocida por el automata
 */
+template<class TSymbol, class TToken>
 bool Nfa::IsMatch(Nfa::TSampleConstIter begin, Nfa::TSampleConstIter end) const
 {
 	TTokenVector next = CreateTokenVector();
@@ -207,6 +226,7 @@ bool Nfa::IsMatch(Nfa::TSampleConstIter begin, Nfa::TSampleConstIter end) const
 
 /** Indica si una muestra es reconocida por el automata
 */
+template<class TSymbol, class TToken>
 bool Nfa::IsMatch( const TSample& sample ) const
 {
 	return IsMatch(sample.begin(), sample.end());
@@ -214,6 +234,7 @@ bool Nfa::IsMatch( const TSample& sample ) const
 
 /** Combina los estados suministrados. El segundo estado es eliminado
 */
+template<class TSymbol, class TToken>
 void Nfa::Merge( unsigned ns1, unsigned ns2 )
 {
 	assert(_TestBit(ActiveStates, ns1));
@@ -275,6 +296,7 @@ void Nfa::Merge( unsigned ns1, unsigned ns2 )
 
 /** Activa un estado para que pueda ser usado
 */
+template<class TSymbol, class TToken>
 void Nfa::ActivateState( unsigned st )
 {
 	if(st >= MaxStates)
@@ -295,6 +317,7 @@ void Nfa::ActivateState( unsigned st )
 	}
 }
 
+template<class TSymbol, class TToken>
 void Nfa::_MoveActiveTokenVectors(TTokenVector dest, const TTokenVector source, unsigned beforeTokens, size_t beforeVectorSize)
 {		
 	unsigned bitToken = 0;
@@ -320,6 +343,7 @@ void Nfa::_MoveActiveTokenVectors(TTokenVector dest, const TTokenVector source, 
 	}
 }
 
+template<class TSymbol, class TToken>
 void Nfa::ResizeFor(unsigned states)
 {
 	unsigned beforeTokens = Tokens;
@@ -367,6 +391,7 @@ void Nfa::ResizeFor(unsigned states)
 /** Añade la informacion necesaria a la estructura de datos para que el automata
     contenga una transicion desde el estado src al estado dest con el simbolo sym
 */
+template<class TSymbol, class TToken>
 void Nfa::SetTransition( unsigned src, unsigned dest, TSymbol sym )
 {
 	assert(sym < GetAlphabetLenght());
@@ -381,6 +406,7 @@ void Nfa::SetTransition( unsigned src, unsigned dest, TSymbol sym )
 
 /** Ajusta el estado como estado inicial
 */
+template<class TSymbol, class TToken>
 void Nfa::SetInitial( unsigned st )
 {
 	// activar el estado
@@ -390,6 +416,7 @@ void Nfa::SetInitial( unsigned st )
 
 /** Ajusta el estado como estado final
 */
+template<class TSymbol, class TToken>
 void Nfa::SetFinal( unsigned st )
 {
 	// activar el estado
@@ -399,6 +426,7 @@ void Nfa::SetFinal( unsigned st )
 
 /** Indica si un estado es inicial
 */
+template<class TSymbol, class TToken>
 bool Nfa::IsInitial(unsigned st) const
 {
 	return _TestBit(GetInitial(), st);
@@ -406,11 +434,13 @@ bool Nfa::IsInitial(unsigned st) const
 	
 /** Indica si un estado es final
 */
+template<class TSymbol, class TToken>
 bool Nfa::IsFinal(unsigned st) const
 {
 	return _TestBit(GetFinal(), st);
 }
 
+template<class TSymbol, class TToken>
 bool Nfa::IsActiveState(unsigned st) const
 {
 	return _TestBit(ActiveStates, st);
@@ -418,6 +448,7 @@ bool Nfa::IsActiveState(unsigned st) const
 
 /** Indica si existe una transicion entre el estado src y el estado dest a traves del simbolo sym
 */
+template<class TSymbol, class TToken>
 bool Nfa::ExistTransition(unsigned src, unsigned dest, Nfa::TSymbol sym) const
 {
 	return _TestBit(GetSuccesors(src, sym), dest);
@@ -426,6 +457,7 @@ bool Nfa::ExistTransition(unsigned src, unsigned dest, Nfa::TSymbol sym) const
 /** Obtiene un arreglo de bits que representa los estados que son predecesores de un
     estado determinado por un simbolo determinado
 */
+template<class TSymbol, class TToken>
 Nfa::TTokenVector Nfa::_GetPred( unsigned state, TSymbol sym ) const
 {
 	return &Predecessors[_GetIndex(state, sym)];
@@ -434,6 +466,7 @@ Nfa::TTokenVector Nfa::_GetPred( unsigned state, TSymbol sym ) const
 /** Obtiene un arreglo de bits que representa los estados que son sucesores de un
     estado determinado por un simbolo determinado
 */
+template<class TSymbol, class TToken>
 Nfa::TTokenVector Nfa::_GetSuc( unsigned state, TSymbol sym ) const
 {
 	return &Succesors[_GetIndex(state, sym)];
@@ -442,6 +475,7 @@ Nfa::TTokenVector Nfa::_GetSuc( unsigned state, TSymbol sym ) const
 /** Obtiene un arreglo de bits que representa los estados que son predecesores de un
     estado determinado por un simbolo determinado
 */
+template<class TSymbol, class TToken>
 const Nfa::TTokenVector Nfa::GetPredecessors( unsigned state, TSymbol sym ) const
 {
 	return &Predecessors[_GetIndex(state, sym)];
@@ -450,6 +484,7 @@ const Nfa::TTokenVector Nfa::GetPredecessors( unsigned state, TSymbol sym ) cons
 /** Obtiene un arreglo de bits que representa los estados que son sucesores de un
     estado determinado por un simbolo determinado
 */
+template<class TSymbol, class TToken>
 const Nfa::TTokenVector Nfa::GetSuccesors( unsigned state, TSymbol sym ) const
 {
 	return &Succesors[_GetIndex(state, sym)];
@@ -457,6 +492,7 @@ const Nfa::TTokenVector Nfa::GetSuccesors( unsigned state, TSymbol sym ) const
 
 /** Obtiene un vector de bits que representa los estados etiquetados como estados iniciales
 */
+template<class TSymbol, class TToken>
 const Nfa::TTokenVector Nfa::GetInitial() const
 {
 	return Initial;
@@ -464,6 +500,7 @@ const Nfa::TTokenVector Nfa::GetInitial() const
 
 /** Obtiene un vector de bits que representa los estados etiquetados como estados finales
 */
+template<class TSymbol, class TToken>
 const Nfa::TTokenVector Nfa::GetFinal() const
 {
 	return Final;
@@ -471,6 +508,7 @@ const Nfa::TTokenVector Nfa::GetFinal() const
 
 /** Obtiene un vector de bits que representa los estados etiquetados como estados activos
 */
+template<class TSymbol, class TToken>
 const Nfa::TTokenVector Nfa::GetActiveStates() const
 {
 	return ActiveStates;
@@ -478,16 +516,19 @@ const Nfa::TTokenVector Nfa::GetActiveStates() const
 
 /** Obtiene la longitud del alfabeto del automata
 */
+template<class TSymbol, class TToken>
 unsigned Nfa::GetAlphabetLenght() const
 {
 	return AlphabetLenght;
 }
 
+template<class TSymbol, class TToken>
 unsigned Nfa::GetMaxStates() const
 {
 	return MaxStates;
 }
 
+template<class TSymbol, class TToken>
 unsigned Nfa::GetInactiveState() const
 {
 	unsigned bit = 0;
@@ -507,12 +548,14 @@ unsigned Nfa::GetInactiveState() const
 
 /** Obtiene el indice para ser usado con los vectores de predecesores y sucesores
 */
+template<class TSymbol, class TToken>
 unsigned Nfa::_GetIndex( unsigned st, TSymbol sym ) const
 {
 	assert(sym < AlphabetLenght);
 	return _GetIndex(st, sym, Tokens);
 }
 
+template<class TSymbol, class TToken>
 unsigned Nfa::_GetIndex( unsigned st, TSymbol sym, unsigned Tokens) const
 {
 	assert(sym < AlphabetLenght);

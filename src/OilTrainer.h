@@ -2,12 +2,13 @@
 
 #include "Nfa.h"
 #include <vector>
+#include <stdint.h>
 
+template<class TSymbol = uint8_t>
 class OilTrainer
 {
 public:
-	typedef Nfa::TSymbol TSymbol;
-	typedef Nfa::TSample TSample;
+
 	typedef std::vector<TSample> TSamples;
 	
 private:	

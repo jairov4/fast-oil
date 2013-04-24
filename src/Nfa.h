@@ -1,17 +1,40 @@
 #pragma once
 
 #include <vector>
+#include <stdint.h>
+
+template<class TSymbol = uint8_t>
+class NfaInterface
+{
+public:
+	virtual void CopyBufferTo(void* memDest) = 0;
+
+	virtual void SetTransition(uint32_t src, uint32_t dest, TSymbol sym) = 0;
+	virtual void SetInitial(uint32_t st) = 0;
+	virtual void SetFinal(uint32_t st) = 0;
+
+	virtual bool IsInitial(uint32_t st) const = 0;
+	virtual bool IsFinal(uint32_t st) const = 0;
+	virtual bool IsActiveState(uint32_t st) const = 0;
+	virtual bool ExistTransition(uint32_t src, uint32_t dest, TSymbol sym) const = 0;
+
+	virtual unsigned GetInactiveState() const = 0;	
+	virtual unsigned GetMaxStates() const = 0;	
+	virtual unsigned GetAlphabetLenght() const = 0;
+
+	virtual void Merge(uint32_t ns1, uint32_t ns2) = 0;
+		
+	virtual bool IsMatch(std::iterator<std::input_iterator_tag, TSymbol> begin, std::iterator<std::input_iterator_tag, TSymbol> end) = 0;
+
+	virtual ~NfaInterface() = 0;
+};
 
 /** Representa un automata no determinista
 */
-class Nfa
+template<class TSymbol, class TToken>
+class Nfa : public NfaInterface<TSymbol>
 {
-public:
-	typedef unsigned TSymbol;
-	typedef __int64 TToken;
-	typedef std::vector<TSymbol> TSample;
-	typedef TSample::iterator TSampleIter;
-	typedef TSample::const_iterator TSampleConstIter;
+public:	
 	typedef TToken* TTokenVector;
 
 	static const unsigned BitsPerToken = sizeof(TToken) * 8;
@@ -73,39 +96,33 @@ private:
 public:
 	Nfa(unsigned alpha);
 	Nfa(const Nfa& c);
-	~Nfa(void);
+	virtual ~Nfa();
 
 	void Clear();
 	void CloneFrom(const Nfa& c);
-
-	void SetTransition(unsigned src, unsigned dest, TSymbol sym);
-	void SetInitial(unsigned st);
-	void SetFinal(unsigned st);
-
-	bool IsInitial(unsigned st) const;
-	bool IsFinal(unsigned st) const;
-	bool IsActiveState(unsigned st) const;
-	bool ExistTransition(unsigned src, unsigned dest, TSymbol sym) const;
-
-	bool IsMatch(TSampleConstIter begin, TSampleConstIter end) const;
-	bool IsMatch(const TSample& sample) const;
-	void Merge(unsigned ns1, unsigned ns2);		
 	
 	const TTokenVector GetPredecessors(unsigned state, TSymbol sym) const;
 	const TTokenVector GetSuccesors(unsigned state, TSymbol sym) const;	
 	const TTokenVector GetInitial() const;
 	const TTokenVector GetFinal() const;
 	const TTokenVector GetActiveStates() const;
-		
-	unsigned GetInactiveState() const;	
-	unsigned GetMaxStates() const;	
-	unsigned GetAlphabetLenght() const;		
-};
 
-bool _SetBit(Nfa::TTokenVector vec, unsigned bit);
-bool _ClearBit(Nfa::TTokenVector vec, unsigned bit);
-bool _TestBit(const Nfa::TTokenVector vec, unsigned bit);
-void _ClearAllBits(Nfa::TTokenVector vec, unsigned tokens);
-void _OrAndClearSecondBit(Nfa::TTokenVector vec, unsigned b1, unsigned b2);
-Nfa::TTokenVector AllocTokens(unsigned tokens);
-Nfa::TTokenVector ReallocTokens(Nfa::TTokenVector v, unsigned tokens);
+	virtual void CopyBufferTo(void* memDest);
+
+	virtual void SetTransition(uint32_t src, uint32_t dest, TSymbol sym);
+	virtual void SetInitial(uint32_t st);
+	virtual void SetFinal(uint32_t st);
+
+	virtual bool IsInitial(uint32_t st) const;
+	virtual bool IsFinal(uint32_t st) const;
+	virtual bool IsActiveState(uint32_t st) const;
+	virtual bool ExistTransition(uint32_t src, uint32_t dest, TSymbol sym) const;
+
+	virtual unsigned GetInactiveState() const;	
+	virtual unsigned GetMaxStates() const;	
+	virtual unsigned GetAlphabetLenght() const;
+
+	virtual void Merge(uint32_t ns1, uint32_t ns2);
+	
+	virtual bool IsMatch(std::iterator<std::input_iterator_tag, TSymbol> begin, std::iterator<std::input_iterator_tag, TSymbol> end);
+};
