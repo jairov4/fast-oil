@@ -6,13 +6,12 @@ option(USE_AVX256 "Use AVX-256 Instructions" ON)
 
 enable_language(CXX)
 
-configure_file(FastOil/config.h.in FastOil/config.h)
+configure_file(config.h.in config.h)
 
 find_package(Boost 1.40 REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
 
-add_executable(FastOil FastOil/main.cpp FastOil/Nfa.cpp FastOil/NfaDotExporter.cpp FastOil/OilTrainer.cpp FastOil/SamplesReader.cpp FastOil/Testing.cpp)
-target_link_libraries(FastOil opencl)
+add_executable(FastOil main.cpp Nfa.cpp NfaDotExporter.cpp OilTrainer.cpp SamplesReader.cpp Testing.cpp)
 
 install (TARGETS FastOil DESTINATION bin)
 
