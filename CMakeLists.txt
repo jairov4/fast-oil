@@ -7,6 +7,7 @@ project(FastOil CXX)
 option(USE_AVX256 "Use AVX-256 Instructions" ON)
 
 configure_file(src/config.h.in config.h)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 
 find_package(Boost 1.40 REQUIRED)
 find_package(OpenCL REQUIRED)
