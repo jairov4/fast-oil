@@ -8,45 +8,7 @@
 using namespace std;
 
 namespace Testing {
-
-	void Test1()
-	{
-		Nfa nfa(5);
-		nfa.SetTransition(0, 1, 3);
-		nfa.SetInitial(0);
-		nfa.SetFinal(1);
-
-		unsigned array1[] = {1,2,3,4};
-		unsigned array2[] = {1};
-		unsigned array3[] = {3};
-				
-		assert(!nfa.IsMatch(OilTrainer::TSample(array1, array1+4)));
-		assert(!nfa.IsMatch(OilTrainer::TSample(array2, array2+1)));
-		assert(nfa.IsMatch(OilTrainer::TSample(array3, array3+1)));
-	}
-
-	void Test2()
-	{
-		Nfa nfa(2);		
-		nfa.SetTransition(0, 1, 0);
-		nfa.SetTransition(0, 0, 1);
-		nfa.SetInitial(0);
-		nfa.SetFinal(1);
-		NfaDotExporter::Export(nfa, "test2.dot");
-	}
-
-	void Test3()
-	{
-		Nfa nfa(2);		
-		nfa.SetTransition(0, 1, 0);
-		nfa.SetTransition(0, 0, 1);
-		nfa.SetInitial(0);
-		nfa.SetFinal(1);
-		nfa.Merge(0, 1);
-		NfaDotExporter::Export(nfa, "test3.dot");
-	}
-
-		
+	
 	OilTrainer::TSamples makeSamples(OilTrainer::TSymbol* ini, size_t sampLen, size_t total)
 	{
 		OilTrainer::TSamples samples;
@@ -120,10 +82,7 @@ namespace Testing {
 	void AllTesting()
 	{	
 		list<function<void()>> s;
-
-		s.push_back(Test1);
-		s.push_back(Test2);
-		s.push_back(Test3);
+		
 		//s.push_back(Test4);
 		s.push_back(Test5);
 		s.push_back(Test6);
