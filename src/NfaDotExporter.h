@@ -6,9 +6,9 @@
 
 class NfaDotExporter
 {
-public:	
+public:
 	static void Export(const Nfa& nfa, std::string filename);
 	static void ExportDestinoPlainText(const Nfa& nfa, std::string filename);
-	static Nfa ImportDestinoPlainText(std::string filename);		
+	static Nfa ImportDestinoPlainText(std::string filename);
 };
 
