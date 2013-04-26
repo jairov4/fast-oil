@@ -19,11 +19,12 @@ include_directories(
 
 add_executable(FastOil 
 	"src/main.cpp" 
-	"src/Nfa.cpp" 
 	"src/NfaDotExporter.cpp" 
 	"src/OilTrainer.cpp" 
-	"src/SamplesReader.cpp" 
-	"src/Testing.cpp")
+	"src/SamplesReader.cpp")
+	
+add_executable(Nfa_Test "src/TestNfa.cpp")
+add_test(Nfa_Test NfaTest)
 
 target_link_libraries(FastOil "${OPENCL_LIBRARIES}")
 
