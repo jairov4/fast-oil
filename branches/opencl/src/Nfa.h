@@ -352,8 +352,8 @@ public:
 
 	virtual void Merge(uint32_t ns1, uint32_t ns2)
 	{
-		assert(_TestBit(ActiveStates, ns1));
-		assert(_TestBit(ActiveStates, ns2));
+		assert(BU::TestBit(ActiveStates, ns1));
+		assert(BU::TestBit(ActiveStates, ns2));
 		
 		BU::OrAndClearSecondBit(Initial, ns1, ns2);
 		BU::OrAndClearSecondBit(Final, ns1, ns2);
