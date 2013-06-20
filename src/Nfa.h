@@ -60,6 +60,8 @@ private:
 		return (st*AlphabetLenght+sym)*Tokens;
 	}
 
+	// Mueve un vector de tokens a otro con el cuidado de conservar el espacio entre grupos de tokens, 
+	// esto es util cuando se redimensiona la cantidad de estados
 	void _MoveActiveTokenVectors(TTokenVector dest, const TTokenVector source, unsigned beforeTokens, size_t beforeVectorSize)
 	{		
 		unsigned bitToken = 0;
@@ -102,6 +104,7 @@ private:
 	{
 		if(st >= MaxStates)
 		{
+			// TODO: Mejorar el algoritmo de crecimiento del numero de estados
 			ResizeFor(MaxStates * 2);
 		}
 
